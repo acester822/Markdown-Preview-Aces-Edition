@@ -21,7 +21,7 @@ let editorScrollDelay = Date.now();
 
 // hide default vscode markdown preview buttons if necessary
 const hideDefaultVSCodeMarkdownPreviewButtons = vscode.workspace
-  .getConfiguration('markdown-preview-enhanced')
+  .getConfiguration('markdown-preview-aces-edition')
   .get<boolean>('hideDefaultVSCodeMarkdownPreviewButtons');
 if (hideDefaultVSCodeMarkdownPreviewButtons) {
   vscode.commands.executeCommand(
@@ -572,7 +572,7 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
           vscode.commands.executeCommand(
             'vscode.openWith',
             fileUri,
-            'markdown-preview-enhanced',
+            'markdown-preview-aces-edition',
             options,
           );
           */
@@ -644,23 +644,23 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
 
   async function openChangelog() {
     const url =
-      'https://github.com/shd101wyy/vscode-markdown-preview-enhanced/releases';
+      'https://github.com/acester822/vscode-markdown-preview-aces-edition/releases';
     return vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(url));
   }
 
   async function openDocumentation() {
-    const url = 'https://shd101wyy.github.io/markdown-preview-enhanced/';
+    const url = 'https://acester822.github.io/markdown-preview-aces-edition/';
     return vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(url));
   }
 
   async function openIssues() {
     const url =
-      'https://github.com/shd101wyy/vscode-markdown-preview-enhanced/issues';
+      'https://github.com/acester822/vscode-markdown-preview-aces-edition/issues';
     vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(url));
   }
 
   async function openSponsors() {
-    const url = 'https://github.com/sponsors/shd101wyy/';
+    const url = 'https://github.com/sponsors/acester822/';
     vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(url));
   }
 
@@ -787,9 +787,9 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeConfiguration((event) => {
       // console.log(
       //   'onDidChangeConfiguration: ',
-      //   event.affectsConfiguration('markdown-preview-enhanced'),
+      //   event.affectsConfiguration('markdown-preview-aces-edition'),
       // );
-      if (event.affectsConfiguration('markdown-preview-enhanced')) {
+      if (event.affectsConfiguration('markdown-preview-aces-edition')) {
         notebooksManager.updateAllNotebooksConfig();
       }
     }),
@@ -960,91 +960,91 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.openPreviewToTheSide',
+      'markdown-preview-aces-edition.openPreviewToTheSide',
       openPreviewToTheSide,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.openPreview',
+      'markdown-preview-aces-edition.openPreview',
       openPreview,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.toggleScrollSync',
+      'markdown-preview-aces-edition.toggleScrollSync',
       toggleScrollSync,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.toggleLiveUpdate',
+      'markdown-preview-aces-edition.toggleLiveUpdate',
       toggleLiveUpdate,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.toggleBreakOnSingleNewLine',
+      'markdown-preview-aces-edition.toggleBreakOnSingleNewLine',
       toggleBreakOnSingleNewLine,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.openImageHelper',
+      'markdown-preview-aces-edition.openImageHelper',
       openImageHelper,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.runAllCodeChunks',
+      'markdown-preview-aces-edition.runAllCodeChunks',
       runAllCodeChunksCommand,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.runCodeChunk',
+      'markdown-preview-aces-edition.runCodeChunk',
       runCodeChunkCommand,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.syncPreview',
+      'markdown-preview-aces-edition.syncPreview',
       syncPreview,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.insertNewSlide',
+      'markdown-preview-aces-edition.insertNewSlide',
       insertNewSlide,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.insertTable',
+      'markdown-preview-aces-edition.insertTable',
       insertTable,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.insertPagebreak',
+      'markdown-preview-aces-edition.insertPagebreak',
       insertPagebreak,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.createTOC',
+      'markdown-preview-aces-edition.createTOC',
       createTOC,
     ),
   );
@@ -1200,28 +1200,28 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.customizeCssInWorkspace',
+      'markdown-preview-aces-edition.customizeCssInWorkspace',
       customizeCSSInWorkspace,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.openConfigScriptInWorkspace',
+      'markdown-preview-aces-edition.openConfigScriptInWorkspace',
       openConfigScriptInWorkspace,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.extendParserInWorkspace',
+      'markdown-preview-aces-edition.extendParserInWorkspace',
       extendParserInWorkspace,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.customizePreviewHtmlHeadInWorkspace',
+      'markdown-preview-aces-edition.customizePreviewHtmlHeadInWorkspace',
       customizePreviewHtmlHeadInWorkspace,
     ),
   );
@@ -1250,7 +1250,7 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.window.registerCustomEditorProvider(
-      'markdown-preview-enhanced',
+      'markdown-preview-aces-edition',
       new PreviewCustomEditorProvider(context),
     ),
   );

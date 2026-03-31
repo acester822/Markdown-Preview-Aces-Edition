@@ -277,7 +277,7 @@ export class MarkdownPreviewEnhancedConfig implements NotebookConfig {
 }
 
 export function getMPEConfig<T>(section: ConfigKey) {
-  const config = vscode.workspace.getConfiguration('markdown-preview-enhanced');
+  const config = vscode.workspace.getConfiguration('markdown-preview-aces-edition');
   return config.get<T>(section);
 }
 
@@ -287,6 +287,6 @@ export function updateMPEConfig<T>(
   configurationTarget?: boolean | vscode.ConfigurationTarget | null | undefined,
   overrideInLanguage?: boolean | undefined,
 ) {
-  const config = vscode.workspace.getConfiguration('markdown-preview-enhanced');
+  const config = vscode.workspace.getConfiguration('markdown-preview-aces-edition');
   return config.update(section, value, configurationTarget, overrideInLanguage);
 }

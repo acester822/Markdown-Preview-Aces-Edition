@@ -1,6 +1,6 @@
 # Diagrams
 
-## [Mermaid](https://shd101wyy.github.io/markdown-preview-enhanced/#/diagrams?id=mermaid)
+## [Mermaid](https://acester822.github.io/markdown-preview-aces-edition/#/diagrams?id=mermaid)
 
 `mermaid`
 
@@ -24,7 +24,7 @@ graph TD;
     C-->D;
 ```
 
-## [PlantUML](https://shd101wyy.github.io/markdown-preview-enhanced/#/diagrams?id=plantuml)
+## [PlantUML](https://acester822.github.io/markdown-preview-aces-edition/#/diagrams?id=plantuml)
 
 `puml`
 
@@ -60,7 +60,7 @@ Alice <-- Bob: another authentication Response
 @enduml
 ```
 
-## [WaveDrom](https://shd101wyy.github.io/markdown-preview-enhanced/#/diagrams?id=sequence-diagrams)
+## [WaveDrom](https://acester822.github.io/markdown-preview-aces-edition/#/diagrams?id=sequence-diagrams)
 
 `wavedrom`
 
@@ -72,7 +72,7 @@ Alice <-- Bob: another authentication Response
 ]}
 ```
 
-## [GraphViz](https://shd101wyy.github.io/markdown-preview-enhanced/#/diagrams?id=graphviz)
+## [GraphViz](https://acester822.github.io/markdown-preview-aces-edition/#/diagrams?id=graphviz)
 
 `viz`
 

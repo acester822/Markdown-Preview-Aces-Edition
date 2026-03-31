@@ -1,6 +1,6 @@
 # Changelog
 
-For releases, please visit the [project releases page](https://github.com/shd101wyy/vscode-markdown-preview-enhanced/releases).
+For releases, please visit the [project releases page](https://github.com/acester822/vscode-markdown-preview-aces-edition/releases).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+
+- Rebranded extension identity from `Markdown Preview Enhanced` / `markdown-preview-enhanced` to `Markdown Preview Aces Edition` / `markdown-preview-aces-edition` across manifest, command IDs, configuration keys, custom editor/view IDs, and internal preview URI scheme.
+- Updated extension publisher/owner references from `shd101wyy` to `acester822` in manifest metadata, install helper extension ID, documentation links, and extension in-app links.
+- Rewrote `README.md` to match the merged Aces Edition fork: removed outdated sponsor/marketing/upstream-doc sections and replaced with concise, accurate fork identity, local workflow, and build/package instructions.
+- Expanded `README.md` with an `Aces Edition Updates` section that explicitly documents major fork improvements (new theme, improved menu/actions, code block copy actions, line-number/source-sync workflow, and preview UX upgrades).
+- Corrected `README.md` update notes to explicitly state that in-preview editor support and preview zen mode are removed in this fork.
 
 - Recovery: restored full local `crossnote` source tree into the merged `mpae` repository after partial deletion during git sync.
 - Recovery: removed nested `crossnote/.git` to avoid nested-repo conflicts inside the merged project.

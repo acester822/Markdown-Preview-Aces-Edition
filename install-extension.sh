@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-EXT_DIR="$ROOT_DIR/vscode-markdown-preview-enhanced"
+EXT_DIR="$ROOT_DIR/vscode-markdown-preview-aces-edition"
 
 function info() {
   printf "\033[1;34m%s\033[0m\n" "$1"
@@ -23,8 +23,8 @@ if [ ! -d "$EXT_DIR" ]; then
   error "Extension directory does not exist: $EXT_DIR"
   exit 1
 fi
-# If markdown-preview-enhanced is already installed, remove it first so 'code --install-extension --force' starts clean.
-UNINSTALL_EXT="shd101wyy.markdown-preview-enhanced"
+# If markdown-preview-aces-edition is already installed, remove it first so 'code --install-extension --force' starts clean.
+UNINSTALL_EXT="acester822.markdown-preview-aces-edition"
 if command -v code >/dev/null 2>&1; then
   if code --list-extensions | grep -qx "$UNINSTALL_EXT"; then
     info "Existing extension $UNINSTALL_EXT found in code, uninstalling first..."

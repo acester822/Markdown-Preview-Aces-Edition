@@ -148,14 +148,14 @@ class NotebooksManager {
     if (previewMode === PreviewMode.PreviewsOnly) {
       const associations: { [key: string]: string } = {};
       markdownFileExtensions.forEach((ext) => {
-        associations[`*${ext}`] = 'markdown-preview-enhanced';
+        associations[`*${ext}`] = 'markdown-preview-aces-edition';
       });
       // Add associations to editorAssociations
       newEditorAssociations = { ...editorAssociations, ...associations };
     } else {
-      // delete associations from editorAssociations if exists and value is 'markdown-preview-enhanced'
+      // delete associations from editorAssociations if exists and value is 'markdown-preview-aces-edition'
       markdownFileExtensions.forEach((ext) => {
-        if (editorAssociations[`*${ext}`] === 'markdown-preview-enhanced') {
+        if (editorAssociations[`*${ext}`] === 'markdown-preview-aces-edition') {
           delete newEditorAssociations[`*${ext}`];
         }
       });

@@ -1,4 +1,4 @@
-## [Math](https://shd101wyy.github.io/markdown-preview-enhanced/#/math)
+## [Math](https://acester822.github.io/markdown-preview-aces-edition/#/math)
 
 `hello $inline$ math`
 hello $inline$ math

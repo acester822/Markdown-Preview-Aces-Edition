@@ -85,35 +85,35 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.customizeCss',
+      'markdown-preview-aces-edition.customizeCss',
       customizeCSS,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.openConfigScript',
+      'markdown-preview-aces-edition.openConfigScript',
       openConfigScript,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.extendParser',
+      'markdown-preview-aces-edition.extendParser',
       extendParser,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.customizePreviewHtmlHead',
+      'markdown-preview-aces-edition.customizePreviewHtmlHead',
       customizePreviewHtmlHead,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'markdown-preview-enhanced.showUploadedImages',
+      'markdown-preview-aces-edition.showUploadedImages',
       showUploadedImages,
     ),
   );

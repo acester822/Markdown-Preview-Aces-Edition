@@ -1,75 +1,84 @@
-<h1 align="center"> Markdown Preview Enhanced </h1>
+# Markdown Preview Aces Edition
 
-![intro](https://user-images.githubusercontent.com/1908863/28495106-30b3b15e-6f09-11e7-8eb6-ca4ca001ab15.png)
+Markdown Preview Aces Edition is a custom merged fork of the original Markdown Preview Enhanced extension.
 
-<div align="center">
+This repository is the source used to build and package this edition.
 
-[English](https://shd101wyy.github.io/markdown-preview-enhanced/#/) · [简体中文](https://shd101wyy.github.io/markdown-preview-enhanced/#/zh-cn/) · [繁體中文](https://shd101wyy.github.io/markdown-preview-enhanced/#/zh-tw/) · [日本語](https://shd101wyy.github.io/markdown-preview-enhanced/#/ja-jp/) · [한국어](https://shd101wyy.github.io/markdown-preview-enhanced/#/ko-kr/) · [Français](https://shd101wyy.github.io/markdown-preview-enhanced/#/fr-fr/) · [Español](https://shd101wyy.github.io/markdown-preview-enhanced/#/es-es/) · [Português](https://shd101wyy.github.io/markdown-preview-enhanced/#/pt-br/) · [Nederlands](https://shd101wyy.github.io/markdown-preview-enhanced/#/nl-nl/) · [Türkçe](https://shd101wyy.github.io/markdown-preview-enhanced/#/tr-tr/)
+## Aces Edition Updates
 
-</div>
+This fork carries the upstream MPE/Crossnote feature set and adds focused quality and UX work. Highlights include:
 
-<div align="center">
+- New custom preview theme: `aces-codepunk`.
 
-[VS Code](https://marketplace.visualstudio.com/items?itemName=shd101wyy.markdown-preview-enhanced) · [VS Code for the Web](https://vscode.dev)
+- New and much improved preview action/menu UX, including floating actions for common tasks.
 
-</div>
+- Code block copy actions in preview (`Copy Code`, plus related quick actions like `Copy Markdown` / `Copy ID`).
 
-## Supporting this project
+- Line numbers support and improved line/highlight/source mapping behavior for better preview-to-source workflow.
 
-Markdown Preview Enhanced is an open source project released under the [University of Illinois/NCSA Open Source License](LICENSE.md). Its ongoing development is made possible thanks to the support by these awesome [backers](https://shd101wyy.github.io/markdown-preview-enhanced/#/backers). You can help make this project better by [supporting us on GitHub Sponsors](https://github.com/sponsors/shd101wyy), [PayPal](https://shd101wyy.github.io/markdown-preview-enhanced/#/paypal), or [微信支付 Wechat Pay](https://shd101wyy.github.io/markdown-preview-enhanced/#/wechat). Thank you!
+- Backlinks and sidebar TOC workflow improvements, with better in-preview controls.
 
-## Sponsors
+- In-preview editor support was removed in this fork.
 
-<a href="https://github.com/sponsors/shd101wyy">
-  <img src="https://github.blog/wp-content/uploads/2019/05/mona-heart-featured.png?" width="200"></a><br>
+- Preview zen mode was removed in this fork.
 
-These [GitHub Sponsors](https://github.com/sponsors/shd101wyy#sponsors) and [Backers](https://shd101wyy.github.io/markdown-preview-enhanced/#/backers) help push this project forward 🎉.
+- Ongoing parser/rendering, markdown transform, and dependency updates merged from upstream, plus local hardening and fixes.
 
-## Introduction
+For the full chronological history of all updates, see `CHANGELOG.md`.
 
-Markdown Preview Enhanced is an extension that provides you with many useful functionalities such as automatic scroll sync, [math typesetting](https://shd101wyy.github.io/markdown-preview-enhanced/#/math), [mermaid](https://shd101wyy.github.io/markdown-preview-enhanced/#/diagrams?id=mermaid), [PlantUML](https://shd101wyy.github.io/markdown-preview-enhanced/#/diagrams?id=plantuml), [WebSequenceDiagrams](https://www.websequencediagrams.com), [pandoc](https://shd101wyy.github.io/markdown-preview-enhanced/#/pandoc), PDF export, [code chunk](https://shd101wyy.github.io/markdown-preview-enhanced/#/code-chunk), [presentation writer](https://rawgit.com/shd101wyy/markdown-preview-enhanced/master/docs/presentation-intro.html), etc. A lot of its ideas are inspired by [Markdown Preview Plus](https://github.com/atom-community/markdown-preview-plus) and [RStudio Markdown](http://rmarkdown.rstudio.com/).
+## Project Layout
 
-Feel free to ask questions, post issues, submit pull request, and request new features.
+- `src/`: VS Code extension source
+- `crossnote/`: bundled local crossnote dependency and web assets
+- `media/`: extension icons and command icons
+- `test/`: extension tests and markdown fixture files
+- `build.js`, `gulpfile.js`: build pipeline
 
-For more information about this project and how to use this extension, please check out our documentation ⬇︎
+## Development
 
-## Documentation
+### Prerequisites
 
-To check out the documentation, visit
+- Node.js 18+
+- pnpm (recommended)
 
-- [English](https://shd101wyy.github.io/markdown-preview-enhanced/#/)
-- [简体中文](https://shd101wyy.github.io/markdown-preview-enhanced/#/zh-cn/)
-- [繁體中文](https://shd101wyy.github.io/markdown-preview-enhanced/#/zh-tw/)
-- [日本語](https://shd101wyy.github.io/markdown-preview-enhanced/#/ja-jp/)
-- [한국어](https://shd101wyy.github.io/markdown-preview-enhanced/#/ko-kr/)
-- [Français](https://shd101wyy.github.io/markdown-preview-enhanced/#/fr-fr/)
-- [Español](https://shd101wyy.github.io/markdown-preview-enhanced/#/es-es/)
-- [Português](https://shd101wyy.github.io/markdown-preview-enhanced/#/pt-br/)
-- [Nederlands](https://shd101wyy.github.io/markdown-preview-enhanced/#/nl-nl/)
-- [Türkçe](https://shd101wyy.github.io/markdown-preview-enhanced/#/tr-tr/)
+### Install dependencies
 
-Contact me if you are willing to help translate the documentation :)
+```bash
+pnpm install
+```
 
-## Keybindings
+### Build
 
-> The <kbd>cmd</kbd> key for _Windows_ is <kbd>ctrl</kbd>.
+```bash
+pnpm run build
+```
 
-| Shortcuts                                         | Functionality              |
-| ------------------------------------------------- | -------------------------- |
-| <kbd>cmd-k v</kbd> or <kbd>ctrl-k v</kbd>         | Open preview to the Side   |
-| <kbd>cmd-shift-v</kbd> or <kbd>ctrl-shift-v</kbd> | Open preview               |
-| <kbd>ctrl-shift-s</kbd>                           | Sync preview / Sync source |
-| <kbd>shift-enter</kbd>                            | Run Code Chunk             |
-| <kbd>ctrl-shift-enter</kbd>                       | Run all Code Chunks        |
-| <kbd>cmd-=</kbd> or <kbd>cmd-shift-=</kbd>        | Preview zoom in            |
-| <kbd>cmd--</kbd> or <kbd>cmd-shift-\_</kbd>       | Preview zoom out           |
-| <kbd>cmd-0</kbd>                                  | Preview reset zoom         |
-| <kbd>esc</kbd>                                    | Toggle sidebar TOC         |
+### Watch mode
+
+```bash
+pnpm run watch
+```
+
+### Run tests
+
+```bash
+pnpm test
+```
+
+## Package and Install Locally
+
+Use the helper script:
+
+```bash
+./install-extension.sh
+```
+
+The script will build, package, and install the VSIX into `code` or `code-server` if available.
 
 ## Changelog
 
-Please check the [Releases](https://github.com/shd101wyy/vscode-markdown-preview-enhanced/releases) page of this project.
+See `CHANGELOG.md` for local and release history.
 
 ## License
 
-[University of Illinois/NCSA Open Source License](LICENSE.md)
+University of Illinois/NCSA Open Source License. See `LICENSE.md`.

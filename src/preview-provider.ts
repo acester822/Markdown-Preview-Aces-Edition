@@ -352,7 +352,7 @@ export class PreviewProvider {
         previewPanel.options.retainContextWhenHidden = true;
       } else {
         previewPanel = vscode.window.createWebviewPanel(
-          'markdown-preview-enhanced',
+          'markdown-preview-aces-edition',
           `Preview ${path.basename(sourceUri.fsPath)}`,
           viewOptions,
           {
@@ -824,7 +824,7 @@ export class PreviewProvider {
   }
 
   public async openImageHelper(sourceUri: Uri) {
-    if (sourceUri.scheme === 'markdown-preview-enhanced') {
+    if (sourceUri.scheme === 'markdown-preview-aces-edition') {
       return vscode.window.showWarningMessage('Please focus a markdown file.');
     } else if (!this.isPreviewOn(sourceUri)) {
       return vscode.window.showWarningMessage('Please open preview first.');
@@ -837,19 +837,19 @@ export class PreviewProvider {
 }
 
 export function getPreviewUri(uri: vscode.Uri) {
-  if (uri.scheme === 'markdown-preview-enhanced') {
+  if (uri.scheme === 'markdown-preview-aces-edition') {
     return uri;
   }
 
   let previewUri: Uri;
   if (getPreviewMode() === PreviewMode.SinglePreview) {
     previewUri = uri.with({
-      scheme: 'markdown-preview-enhanced',
+      scheme: 'markdown-preview-aces-edition',
       path: 'single-preview.rendered',
     });
   } else {
     previewUri = uri.with({
-      scheme: 'markdown-preview-enhanced',
+      scheme: 'markdown-preview-aces-edition',
       path: uri.path + '.rendered',
       query: uri.toString(),
     });
