@@ -4,8 +4,13 @@ For releases, please visit the [project releases page](https://github.com/aceste
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+See [semantic_versioning.md](./semantic_versioning.md) for a local reference on how version numbers should be incremented.
 
 ## [Unreleased]
+
+## [0.9.0] - 2026-03-31
+
+Aces Edition fork: full identity rebrand from upstream `shd101wyy/vscode-markdown-preview-enhanced`.
 
 ### Changed
 
@@ -21,7 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `gulpfile.js` `copy-files` task to preserve the local `./crossnote` package sources and only refresh generated `dependencies/styles/webview` subdirectories, preventing builds from deleting the vendored crossnote dependency.
 - Updated `install-extension.sh` crossnote install step to use `--ignore-scripts` for vendored dependency installs, avoiding Husky lifecycle failures when `crossnote` is embedded in this repo.
 - Updated `build.js` and `gulpfile.js` to consume crossnote artifacts directly from `./crossnote/out` instead of `./node_modules/crossnote/out`, eliminating brittle path-resolution failures from pnpm linked-package internals.
-
 - Recovery: restored full local `crossnote` source tree into the merged `mpae` repository after partial deletion during git sync.
 - Recovery: removed nested `crossnote/.git` to avoid nested-repo conflicts inside the merged project.
 - `package.json`: switched `crossnote` dependency from absolute external path to local `file:./crossnote` so the repo is self-contained.
