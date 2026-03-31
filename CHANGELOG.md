@@ -11,6 +11,7 @@ See [semantic_versioning.md](./semantic_versioning.md) for a local reference on 
 ### Fixed
 
 - `gulpfile.js`: Fixed `copy-files` task destroying LESS sources on every build. The task was using `fs.rmSync` to delete the entire `crossnote/styles/` directory before re-populating it from `out/styles/`, wiping `.less` source files. Changed to a selective removal that only deletes compiled CSS artifacts, preserving `.less` files.
+- `gulpfile.js`: Restored compiled CSS copy step (`crossnote/out/styles/ → crossnote/styles/`). The runtime in `markdown-engine/index.ts` resolves styles via `getCrossnoteBuildDirectory()/styles/` which points to `crossnote/styles/`, not `crossnote/out/styles/`. Removing this step caused all preview CSS (themes, syntax highlighting, layout) to 404, breaking rendering and making the preview non-interactive.
 - `crossnote/styles/`: Restored all `.less` source files (`preview.less`, `style-template.less`, `preview_theme/*.less`, `prism_theme/*.less`) that were replaced with compiled `.css` output during the repository merge.
 - `crossnote/styles/preview.less`: Moved v0.9.1 Aces Edition fixes (code block color, line number alignment/color, `<hr>` gradient) from `preview.css` into proper LESS source.
 
