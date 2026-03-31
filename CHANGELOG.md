@@ -8,6 +8,15 @@ See [semantic_versioning.md](./semantic_versioning.md) for a local reference on 
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-03-31
+
+### Fixed
+
+- `crossnote/styles/preview.css`: Fixed code block text color (`#aeaeae`) and removed unwanted text-shadow on `code[class*=language-]` and `pre[class*=language-]`.
+- `crossnote/styles/preview.css`: Fixed line number alignment in Prism.js line-numbers blocks — set `text-align: center` and `width: 3em` on `> span::before` pseudo-element so numbers center correctly within the gutter column.
+- `crossnote/styles/preview.css`: Recolored line number text to `rgb(228, 213, 0)` and the gutter divider border-right to `rgb(255, 238, 0)`.
+- `crossnote/styles/preview.css`: Replaced the default grey `<hr>` divider with an orange gradient (`linear-gradient(90deg, transparent, #f5a14c, #ffb366, #f5a14c, transparent)`).
+
 ## [0.9.0] - 2026-03-31
 
 Aces Edition fork: full identity rebrand from upstream `shd101wyy/vscode-markdown-preview-enhanced`.
