@@ -19,7 +19,11 @@ gulp.task('copy-files', (cb) => {
   // Keep local crossnote package files (package.json, src, etc.) and
   // only refresh generated asset subdirectories.
   fs.mkdirSync('./crossnote', { recursive: true });
-  for (const dir of ['./crossnote/dependencies', './crossnote/styles', './crossnote/webview']) {
+  for (const dir of [
+    './crossnote/dependencies',
+    './crossnote/styles',
+    './crossnote/webview',
+  ]) {
     if (fs.existsSync(dir)) {
       fs.rmSync(dir, { recursive: true });
     }
