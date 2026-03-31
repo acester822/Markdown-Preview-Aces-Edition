@@ -1,9 +1,8 @@
 /**
- * Delete ./crossnote directory
- * Then copy files from
- * - ./node_modules/crossnote/out/dependencies/. to ./crossnote/dependencies/
- * - ./node_modules/crossnote/out/styles/.       to ./crossnote/styles/
- * - ./node_modules/crossnote/out/webview/.      to ./crossnote/webview/
+ * Preserve ./crossnote package sources and copy generated assets from
+ * - ./crossnote/out/dependencies/. to ./crossnote/dependencies/
+ * - ./crossnote/out/styles/.       to ./crossnote/styles/
+ * - ./crossnote/out/webview/.      to ./crossnote/webview/
  */
 const gulp = require('gulp');
 const fs = require('fs');
@@ -17,20 +16,24 @@ gulp.task('clean-out', (cb) => {
 });
 
 gulp.task('copy-files', (cb) => {
-  // Delete ./crossnote directory
-  if (fs.existsSync('./crossnote')) {
-    fs.rmSync('./crossnote', { recursive: true });
+  // Keep local crossnote package files (package.json, src, etc.) and
+  // only refresh generated asset subdirectories.
+  fs.mkdirSync('./crossnote', { recursive: true });
+  for (const dir of ['./crossnote/dependencies', './crossnote/styles', './crossnote/webview']) {
+    if (fs.existsSync(dir)) {
+      fs.rmSync(dir, { recursive: true });
+    }
   }
 
   // Copy files
   gulp
-    .src('./node_modules/crossnote/out/dependencies/**/*')
+    .src('./crossnote/out/dependencies/**/*')
     .pipe(gulp.dest('./crossnote/dependencies/'));
   gulp
-    .src('./node_modules/crossnote/out/styles/**/*')
+    .src('./crossnote/out/styles/**/*')
     .pipe(gulp.dest('./crossnote/styles/'));
   gulp
-    .src('./node_modules/crossnote/out/webview/**/*')
+    .src('./crossnote/out/webview/**/*')
     .pipe(gulp.dest('./crossnote/webview/'));
 
   console.log('Copy files done.');

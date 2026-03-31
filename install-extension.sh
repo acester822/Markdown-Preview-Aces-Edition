@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-EXT_DIR="$ROOT_DIR/vscode-markdown-preview-aces-edition"
+EXT_DIR="$ROOT_DIR"
 
 function info() {
   printf "\033[1;34m%s\033[0m\n" "$1"
@@ -17,10 +17,11 @@ function error() {
 }
 
 info "\n=== Install extension helper ==="
+
 info "Extension directory: $EXT_DIR"
 
-if [ ! -d "$EXT_DIR" ]; then
-  error "Extension directory does not exist: $EXT_DIR"
+if [ ! -f "$EXT_DIR/package.json" ]; then
+  error "Extension directory is invalid (package.json not found): $EXT_DIR"
   exit 1
 fi
 # If markdown-preview-aces-edition is already installed, remove it first so 'code --install-extension --force' starts clean.
@@ -38,13 +39,34 @@ elif command -v code-server >/dev/null 2>&1; then
 fi
 cd "$EXT_DIR"
 
-# Prefer local crossnote path dependency when available, avoids registry version.
+# Require local modified crossnote in this repo. Never fall back to registry.
 LOCAL_CROSSNOTE="$ROOT_DIR/crossnote"
-if [ -d "$LOCAL_CROSSNOTE" ]; then
+if [ ! -d "$LOCAL_CROSSNOTE" ]; then
+  if command -v git >/dev/null 2>&1 \
+    && git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+    && git -C "$ROOT_DIR" cat-file -e HEAD:crossnote/package.json 2>/dev/null; then
+    warn "Local crossnote directory missing. Restoring ./crossnote from git HEAD..."
+    git -C "$ROOT_DIR" restore --worktree --source=HEAD crossnote || {
+      error "Failed to restore ./crossnote from git."
+      exit 1
+    }
+  fi
+
+  if [ ! -d "$LOCAL_CROSSNOTE" ]; then
+    error "Local crossnote directory not found: $LOCAL_CROSSNOTE"
+    error "This repository expects crossnote to be present at ./crossnote from the same git sync."
+    exit 1
+  fi
+fi
+
+if command -v pnpm >/dev/null 2>&1; then
   info "Linking local crossnote from $LOCAL_CROSSNOTE into extension dependencies."
-  pnpm add "crossnote@file:$LOCAL_CROSSNOTE" || warn "Failed to add local crossnote package."
+  pnpm add "crossnote@file:./crossnote" || {
+    error "Failed to link local crossnote package from $LOCAL_CROSSNOTE"
+    exit 1
+  }
 else
-  warn "Local crossnote path $LOCAL_CROSSNOTE not found; will use current dependency source."
+  warn "pnpm not found; relying on package.json local file dependency for crossnote."
 fi
 
 # node >=18 required by package.json engines. Node 25 may lead to flaky old deps.
@@ -79,6 +101,31 @@ else
   fi
 fi
 
+info "1.5) Build local crossnote dependency"
+if [ ! -f "$LOCAL_CROSSNOTE/package.json" ]; then
+  error "crossnote/package.json is missing after install; cannot continue."
+  exit 1
+fi
+
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm --dir "$LOCAL_CROSSNOTE" install --frozen-lockfile --ignore-scripts || pnpm --dir "$LOCAL_CROSSNOTE" install --ignore-scripts
+  pnpm --dir "$LOCAL_CROSSNOTE" run build
+elif command -v npm >/dev/null 2>&1; then
+  npm --prefix "$LOCAL_CROSSNOTE" install --ignore-scripts
+  npm --prefix "$LOCAL_CROSSNOTE" run build
+elif command -v yarn >/dev/null 2>&1; then
+  yarn --cwd "$LOCAL_CROSSNOTE" install --force --ignore-scripts
+  yarn --cwd "$LOCAL_CROSSNOTE" build
+else
+  error "No package manager found to build local crossnote."
+  exit 1
+fi
+
+if [ ! -f "$LOCAL_CROSSNOTE/out/cjs/index.cjs" ]; then
+  error "crossnote build output missing: $LOCAL_CROSSNOTE/out/cjs/index.cjs"
+  exit 1
+fi
+
 info "2) Build extension"
 if command -v pnpm >/dev/null 2>&1; then
   pnpm run build
@@ -87,13 +134,16 @@ else
 fi
 
 info "3) Package extension to VSIX"
-if command -v @vscode/vsce >/dev/null 2>&1; then
-  VSCE_CMD="@vscode/vsce"
-elif command -v vsce >/dev/null 2>&1; then
+if command -v vsce >/dev/null 2>&1; then
   VSCE_CMD="vsce"
 elif command -v npm >/dev/null 2>&1; then
   npm install -g @vscode/vsce
-  VSCE_CMD="@vscode/vsce"
+  if command -v vsce >/dev/null 2>&1; then
+    VSCE_CMD="vsce"
+  else
+    error "Installed @vscode/vsce but 'vsce' command is still not available in PATH."
+    exit 1
+  fi
 else
   error "Unable to find vsce/@vscode/vsce and npm. Install one of them to package extension."
   exit 1

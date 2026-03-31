@@ -18,7 +18,7 @@ importers:
         specifier: ^0.4.0
         version: 0.4.1
       crossnote:
-        specifier: file:./crossnote
+        specifier: file:crossnote
         version: file:crossnote
       crypto-js:
         specifier: ^4.2.0

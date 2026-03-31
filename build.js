@@ -45,10 +45,7 @@ const nativeConfig = {
   mainFields: ['main', 'module'],
   conditions: ['require', 'node'],
   alias: {
-    crossnote: path.resolve(
-      __dirname,
-      'node_modules/crossnote/out/cjs/index.cjs',
-    ),
+    crossnote: path.resolve(__dirname, 'crossnote/out/cjs/index.cjs'),
   },
   external: ['vscode'],
 };
@@ -86,10 +83,7 @@ const webConfig = {
   mainFields: ['main', 'module'],
   conditions: ['require', 'browser'],
   alias: {
-    crossnote: path.resolve(
-      __dirname,
-      'node_modules/crossnote/out/cjs/index.cjs',
-    ),
+    crossnote: path.resolve(__dirname, 'crossnote/out/cjs/index.cjs'),
   },
   external: ['vscode'],
   plugins: [

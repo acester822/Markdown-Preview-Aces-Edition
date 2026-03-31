@@ -1,0 +1,42 @@
+name: Deploy typedoc to GitHub Pages
+
+on:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Deploy typedoc to GitHub Pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install nodejs
+        uses: actions/setup-node@v6
+        with:
+          cache: pnpm
+          node-version-file: .tool-versions
+
+      - name: Build and test
+        run: |
+          pnpm install
+          pnpm typedoc
+
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages # The branch the action should deploy to.
+          folder: docs # The folder the action should deploy.
+          clean: true
+          single-commit: true

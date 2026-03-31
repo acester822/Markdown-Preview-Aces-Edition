@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rewrote `README.md` to match the merged Aces Edition fork: removed outdated sponsor/marketing/upstream-doc sections and replaced with concise, accurate fork identity, local workflow, and build/package instructions.
 - Expanded `README.md` with an `Aces Edition Updates` section that explicitly documents major fork improvements (new theme, improved menu/actions, code block copy actions, line-number/source-sync workflow, and preview UX upgrades).
 - Corrected `README.md` update notes to explicitly state that in-preview editor support and preview zen mode are removed in this fork.
+- Fixed `install-extension.sh` to work again in the merged repo layout by resolving the extension directory from the current project root (with legacy fallback), guarding pnpm-only steps, and correcting VSCE command detection to use the `vsce` binary.
+- Tightened `install-extension.sh` to require a local modified crossnote dependency only (via `./crossnote` or `CROSSNOTE_DIR`) and fail fast when missing, with no registry fallback path.
+- Updated `install-extension.sh` to require `crossnote` strictly at `mpae/crossnote` (same git sync), removing legacy extension-dir fallback and external `CROSSNOTE_DIR` override behavior.
+- Updated `package.json` dependency to `crossnote: file:./crossnote` and restored the tracked `crossnote/` working tree from git to recover local-only install behavior.
+- Fixed `gulpfile.js` `copy-files` task to preserve the local `./crossnote` package sources and only refresh generated `dependencies/styles/webview` subdirectories, preventing builds from deleting the vendored crossnote dependency.
+- Updated `install-extension.sh` crossnote install step to use `--ignore-scripts` for vendored dependency installs, avoiding Husky lifecycle failures when `crossnote` is embedded in this repo.
+- Updated `build.js` and `gulpfile.js` to consume crossnote artifacts directly from `./crossnote/out` instead of `./node_modules/crossnote/out`, eliminating brittle path-resolution failures from pnpm linked-package internals.
 
 - Recovery: restored full local `crossnote` source tree into the merged `mpae` repository after partial deletion during git sync.
 - Recovery: removed nested `crossnote/.git` to avoid nested-repo conflicts inside the merged project.
