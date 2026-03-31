@@ -2,13 +2,10 @@
  * Copy generated assets from crossnote/out/ into crossnote/:
  * - crossnote/out/dependencies/ → crossnote/dependencies/
  * - crossnote/out/webview/      → crossnote/webview/
- * - crossnote/out/styles/       → crossnote/styles/  (merges compiled CSS alongside .less sources)
  *
- * NOTE: The crossnote runtime resolves styles via getCrossnoteBuildDirectory() which is set to
- * the crossnote/ package root. It then loads ./styles/preview.css, ./styles/style-template.css,
- * ./styles/preview_theme/*.css etc. directly from crossnote/styles/. The compiled CSS must
- * therefore exist there as well as in crossnote/out/styles/. The .less source files coexist
- * safely in crossnote/styles/ — gulp dest merges and never deletes existing files.
+ * NOTE: The crossnote runtime build directory is set to crossnote/out/ in preview-provider.ts,
+ * so compiled CSS (out/styles/), webview JS, and dependencies are all resolved from there.
+ * The crossnote/styles/ directory contains only .less sources and vendor CSS — no compiled output.
  */
 const gulp = require('gulp');
 const fs = require('fs');
@@ -38,11 +35,6 @@ gulp.task('copy-files', (cb) => {
   gulp
     .src('./crossnote/out/webview/**/*')
     .pipe(gulp.dest('./crossnote/webview/'));
-  // Merge compiled CSS into crossnote/styles/ so the runtime can find them.
-  // Existing .less source files are preserved (gulp dest does not delete).
-  gulp
-    .src('./crossnote/out/styles/**/*')
-    .pipe(gulp.dest('./crossnote/styles/'));
 
   console.log('Copy files done.');
 

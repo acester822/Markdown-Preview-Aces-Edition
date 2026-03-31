@@ -30,9 +30,12 @@ if (isVSCodeWebExtension()) {
     );
   }
 } else {
-  // NOTE: The __dirname is actually the out/native folder
+  // NOTE: The __dirname is actually the out/native folder.
+  // Point to crossnote/out/ so the runtime reads compiled CSS, webview assets,
+  // and dependencies from the build output directory directly — no need to copy
+  // compiled files back into the crossnote/styles/ source tree.
   utility.setCrossnoteBuildDirectory(
-    path.resolve(__dirname, '../../crossnote/'),
+    path.resolve(__dirname, '../../crossnote/out/'),
   );
 }
 
