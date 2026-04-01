@@ -8,12 +8,24 @@ See [semantic_versioning.md](./semantic_versioning.md) for a local reference on 
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-03-31
+
 ### Fixed
 
-- `gulpfile.js`: Fixed `copy-files` task destroying LESS sources on every build. The task was using `fs.rmSync` to delete the entire `crossnote/styles/` directory before re-populating it from `out/styles/`, wiping `.less` source files. Changed to a selective removal that only deletes compiled CSS artifacts, preserving `.less` files.
-- `gulpfile.js`: Restored compiled CSS copy step (`crossnote/out/styles/ → crossnote/styles/`). The runtime in `markdown-engine/index.ts` resolves styles via `getCrossnoteBuildDirectory()/styles/` which points to `crossnote/styles/`, not `crossnote/out/styles/`. Removing this step caused all preview CSS (themes, syntax highlighting, layout) to 404, breaking rendering and making the preview non-interactive.
+- `src/preview-provider.ts`: Pointed `setCrossnoteBuildDirectory` at `crossnote/out/` instead of `crossnote/`. The runtime loads all styles, webview scripts, and dependencies relative to this path. Previously it pointed at the source root, requiring compiled CSS to be duplicated back into `crossnote/styles/` — the source tree. Now the runtime reads directly from the build output directory where assets naturally belong.
+- `gulpfile.js`: Removed the erroneous `crossnote/out/styles/ → crossnote/styles/` reverse-copy step that was introduced as a workaround for the above. The source directory `crossnote/styles/` now contains only `.less` sources and vendor CSS — no compiled output.
 - `crossnote/styles/`: Restored all `.less` source files (`preview.less`, `style-template.less`, `preview_theme/*.less`, `prism_theme/*.less`) that were replaced with compiled `.css` output during the repository merge.
-- `crossnote/styles/preview.less`: Moved v0.9.1 Aces Edition fixes (code block color, line number alignment/color, `<hr>` gradient) from `preview.css` into proper LESS source.
+- `crossnote/styles/preview.less`: Moved v0.9.1 Aces Edition fixes (code block color, line number alignment/color, `<hr>` gradient) from the compiled `preview.css` artifact into the proper `.less` source file.
+- `crossnote/styles/prism_theme/`: Restored 12 vendor CSS prism themes (`coy`, `darcula`, `dark`, `default`, `funky`, `github`, `hopscotch`, `okaidia`, `pojoaque`, `twilight`, `vs`, `xonokai`) that were accidentally deleted during merge repair, causing all Prism.js code block styling to break.
+- `crossnote/tsconfig.json`: Removed `test/**/*` from the TypeScript `include` list, eliminating a spurious `Cannot find type definition file for 'mocha'` warning since test files are not compiled as part of the extension build.
+
+### Added
+
+- Extension icon updated to the Ace of Spades card design.
+
+### Performance
+
+- `.vscodeignore`: Added exclusions for `crossnote/node_modules/**` and all non-runtime directories (`src/`, `test/`, `.github/`, `.husky/`, `.less` sources, dev config files). This reduced the packaged VSIX from **48,474 files (146 MB) to 485 files (16 MB)** — a 99% reduction in file count and 89% reduction in size.
 
 ## [0.9.1] - 2026-03-31
 

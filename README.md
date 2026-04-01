@@ -24,6 +24,10 @@ This fork carries the upstream MPE/Crossnote feature set and adds focused qualit
 
 - Ongoing parser/rendering, markdown transform, and dependency updates merged from upstream, plus local hardening and fixes.
 
+- Extension icon is the Ace of Spades card design.
+
+- Optimized VSIX packaging: the extension ships **485 files (16 MB)**, reduced from a bloated 48,474 files (146 MB) by properly excluding build artifacts and dev dependencies from the package. This is a 99% reduction in file count.
+
 For the full chronological history of all updates, see `CHANGELOG.md`.
 
 ## Project Layout
