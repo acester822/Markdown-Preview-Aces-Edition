@@ -22,6 +22,16 @@ The above header should not appear in TOC
 ls .
 ```
 
+<!-- code_chunk_output -->
+
+- [Bash](#bash)
+- [JavaScript](#javascript)
+- [Python](#python)
+- [LaTeX](#latex)
+
+<!-- /code_chunk_output -->
+
+
 ---
 
 ## JavaScript
@@ -78,6 +88,14 @@ var greeting = 'Hello world!!!';
 console.log(greeting);
 ```
 
+<!-- code_chunk_output -->
+
+Hello world!
+
+
+<!-- /code_chunk_output -->
+
+
 ---
 
 ## Python
@@ -93,6 +111,14 @@ set style data points
 
 plot [-10:10] sin(x),atan(x),cos(atan(x))
 ```
+
+<!-- code_chunk_output -->
+
+Hello world!!!
+
+
+<!-- /code_chunk_output -->
+
 
 ---
 
