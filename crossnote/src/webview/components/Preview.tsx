@@ -6,7 +6,9 @@ import ContextMenu from './ContextMenu';
 import FloatingActions from './FloatingActions';
 import Footer from './Footer';
 import ImageHelper from './ImageHelper';
+import InlineEditor from './InlineEditor';
 import LoadingIcon from './LoadingIcon';
+import MonacoUnderlay from './MonacoUnderlay';
 import RefreshingIcon from './RefreshingIcon';
 import SidebarToc from './SidebarToc';
 import { Topbar } from './Topbar';
@@ -79,6 +81,10 @@ export default function Preview() {
       <ContextMenu></ContextMenu>
       {/** Floating Actions */}
       <FloatingActions></FloatingActions>
+      {/** Inline Editor */}
+      <InlineEditor></InlineEditor>
+      {/** Monaco Underlay */}
+      <MonacoUnderlay></MonacoUnderlay>
     </div>
   );
 }

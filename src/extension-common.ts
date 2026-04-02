@@ -700,11 +700,21 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
   async function updateMarkdown(uri: string, markdown: string) {
     try {
       const sourceUri = vscode.Uri.parse(uri);
-      // Write markdown to file
-      await vscode.workspace.fs.writeFile(sourceUri, Buffer.from(markdown));
-      // Update preview
-      const previewProvider = await getPreviewContentProvider(sourceUri);
-      previewProvider.updateMarkdown(sourceUri);
+      // Use WorkspaceEdit so VS Code's in-memory document buffer is updated
+      // atomically before the preview re-renders. fs.writeFile bypasses the
+      // document model, causing openTextDocument().getText() to return stale
+      // content and the preview to revert to its pre-edit state.
+      const document = await vscode.workspace.openTextDocument(sourceUri);
+      const edit = new vscode.WorkspaceEdit();
+      // Replace the entire document with the new content.
+      const fullRange = new vscode.Range(
+        new vscode.Position(0, 0),
+        new vscode.Position(document.lineCount, 0),
+      );
+      edit.replace(sourceUri, fullRange, markdown);
+      await vscode.workspace.applyEdit(edit);
+      // Persist to disk. onDidSaveTextDocument fires and triggers preview refresh.
+      await document.save();
     } catch (error) {
       vscode.window.showErrorMessage(error);
       console.error(error);

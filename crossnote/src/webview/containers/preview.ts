@@ -118,6 +118,10 @@ const PreviewContainer = createContainer(() => {
   const backlinksElement = useRef<HTMLDivElement>(null);
   const backlinksSha = useRef<string>(SHA256(JSON.stringify([])).toString());
   const [showImageHelper, setShowImageHelper] = useState<boolean>(false);
+  const [allSectionsCollapsed, setAllSectionsCollapsed] =
+    useState<boolean>(false);
+  const [isUnderlayMode, setIsUnderlayMode] = useState<boolean>(false);
+  const [inlineEditElement, setInlineEditElement] = useState<HTMLElement | null>(null);
   const [showSidebarToc, setShowSidebarToc] = useState<boolean>(
     () => localStorage.getItem(showSidebarTocStorageKey) === '1',
   );
@@ -611,6 +615,144 @@ const PreviewContainer = createContainer(() => {
     }
   }, [runCodeChunk]);
 
+  const setupSectionCollapse = useCallback(() => {
+    const preview = previewElement.current;
+    if (!preview) return;
+
+    // Idempotent: skip if already processed
+    if (preview.querySelector('.md-collapse-btn')) return;
+
+    const headings = Array.from(
+      preview.querySelectorAll('h1, h2, h3, h4, h5, h6'),
+    ) as HTMLElement[];
+    if (!headings.length) return;
+
+    // Process top-to-bottom: wrap each heading's following siblings
+    // (up to the next heading of equal/higher level) in a section-body div.
+    // Processing in DOM order works correctly because wrapping siblings into
+    // a section-body div naturally creates nested sections for sub-headings.
+    headings.forEach((heading) => {
+      const level = parseInt(heading.tagName[1], 10);
+
+      // Collect immediately following siblings until next same/higher heading
+      const siblings: Element[] = [];
+      let sibling = heading.nextElementSibling;
+      while (sibling) {
+        if (
+          /^H[1-6]$/.test(sibling.tagName) &&
+          parseInt(sibling.tagName[1], 10) <= level
+        ) {
+          break;
+        }
+        siblings.push(sibling);
+        sibling = sibling.nextElementSibling;
+      }
+
+      // Wrap collected siblings in a collapsible section body
+      if (siblings.length > 0) {
+        const sectionBody = document.createElement('div');
+        sectionBody.className = 'md-section-body';
+        heading.parentElement!.insertBefore(sectionBody, siblings[0]);
+        siblings.forEach((s) => sectionBody.appendChild(s));
+      }
+
+      // Build toggle button
+      const btn = document.createElement('button');
+      btn.className = 'md-collapse-btn';
+      btn.setAttribute('aria-label', 'Toggle section');
+      btn.setAttribute('tabindex', '-1');
+
+      const sectionBodyEl = heading.nextElementSibling;
+      const hasSectionBody =
+        sectionBodyEl?.classList.contains('md-section-body') ?? false;
+
+      if (!hasSectionBody) {
+        // Heading has no collapsible content — keep button as layout placeholder
+        btn.setAttribute('aria-hidden', 'true');
+        btn.style.visibility = 'hidden';
+      }
+
+      heading.insertBefore(btn, heading.firstChild);
+
+      // Restore saved collapse state from localStorage
+      const storageKey = `crossnote.sc.${sourceUri.current}.${heading.tagName}.${heading.getAttribute('data-source-line') ?? heading.textContent?.trim().slice(0, 30)}`;
+      if (localStorage.getItem(storageKey) === '1' && hasSectionBody) {
+        sectionBodyEl!.classList.add('md-collapsed');
+        btn.classList.add('md-collapse-btn--collapsed');
+      }
+
+      if (hasSectionBody) {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          const body = heading.nextElementSibling;
+          if (!body?.classList.contains('md-section-body')) return;
+
+          const isNowCollapsed = body.classList.toggle('md-collapsed');
+          btn.classList.toggle('md-collapse-btn--collapsed', isNowCollapsed);
+
+          // Persist per-section state
+          if (isNowCollapsed) {
+            localStorage.setItem(storageKey, '1');
+          } else {
+            localStorage.removeItem(storageKey);
+          }
+
+          // Invalidate scroll map since layout changed
+          scrollMap.current = null;
+        });
+      }
+    });
+  }, []);
+
+  const collapseAllSections = useCallback(() => {
+    const preview = previewElement.current;
+    if (!preview) return;
+    preview.querySelectorAll<HTMLElement>('.md-section-body').forEach((body) => {
+      body.classList.add('md-collapsed');
+      const prevEl = body.previousElementSibling;
+      prevEl
+        ?.querySelector<HTMLElement>('.md-collapse-btn')
+        ?.classList.add('md-collapse-btn--collapsed');
+    });
+    scrollMap.current = null;
+    setAllSectionsCollapsed(true);
+  }, []);
+
+  const expandAllSections = useCallback(() => {
+    const preview = previewElement.current;
+    if (!preview) return;
+    preview.querySelectorAll<HTMLElement>('.md-section-body').forEach((body) => {
+      body.classList.remove('md-collapsed');
+      const prevEl = body.previousElementSibling;
+      prevEl
+        ?.querySelector<HTMLElement>('.md-collapse-btn')
+        ?.classList.remove('md-collapse-btn--collapsed');
+    });
+    scrollMap.current = null;
+    setAllSectionsCollapsed(false);
+  }, []);
+
+  const toggleAllSections = useCallback(() => {
+    if (allSectionsCollapsed) {
+      expandAllSections();
+    } else {
+      collapseAllSections();
+    }
+  }, [allSectionsCollapsed, collapseAllSections, expandAllSections]);
+
+  const toggleUnderlayMode = useCallback(() => {
+    setIsUnderlayMode((prev) => {
+      const next = !prev;
+      if (next) {
+        document.body.classList.add('underlay-mode');
+      } else {
+        document.body.classList.remove('underlay-mode');
+      }
+      return next;
+    });
+  }, []);
+
   const setupCodeChunks = useCallback(() => {
     if (!previewElement.current) {
       return;
@@ -656,6 +798,8 @@ const PreviewContainer = createContainer(() => {
       await Promise.all([renderInteractiveVega(), renderMermaid()]);
 
       setupCodeChunks();
+      setupSectionCollapse();
+      setAllSectionsCollapsed(false);
 
       setIsRefreshingPreview(false);
     } catch (error) {
@@ -668,6 +812,7 @@ const PreviewContainer = createContainer(() => {
     renderMermaid,
     renderWavedrom,
     setupCodeChunks,
+    setupSectionCollapse,
   ]);
 
   const scrollSyncToSlide = useCallback((line: number) => {
@@ -966,6 +1111,11 @@ const PreviewContainer = createContainer(() => {
               setHighlightElement(null);
             },
           );
+          highlightElement.addEventListener('dblclick', (event) => {
+            event.stopPropagation();
+            event.preventDefault();
+            setInlineEditElement(firstHighlightElement);
+          });
         });
         highlightElementToLinesMap.current.set(
           firstHighlightElement,
@@ -1425,12 +1575,16 @@ const PreviewContainer = createContainer(() => {
           }
         }
       } else if (event.which === 27) {
-        // [esc] toggle sidebar toc
-        escPressed(event);
+        // [esc] toggle sidebar toc — but not when inline editor is open
+        // (the inline editor handles its own Escape via the textarea onKeyDown)
+        if (!inlineEditElement) {
+          escPressed(event);
+        }
       }
     },
     [
       escPressed,
+      inlineEditElement,
       isPresentationMode,
       isVSCode,
       previewSyncSource,
@@ -1645,7 +1799,14 @@ const PreviewContainer = createContainer(() => {
     localStorage.setItem(showSidebarTocStorageKey, showSidebarToc ? '1' : '0');
   }, [showSidebarToc]);
 
+  useEffect(() => {
+    return () => {
+      document.body.classList.remove('underlay-mode');
+    };
+  }, []);
+
   return {
+    allSectionsCollapsed,
     backlinks,
     backlinksElement,
     bindAnchorElementsClickEvent,
@@ -1661,6 +1822,8 @@ const PreviewContainer = createContainer(() => {
     isMouseOverPreview,
     isPresentationMode,
     isRefreshingPreview,
+    isUnderlayMode,
+    inlineEditElement,
     isVSCode,
     isVSCodeWebExtension,
     markdown,
@@ -1669,6 +1832,7 @@ const PreviewContainer = createContainer(() => {
     previewSyncSource,
     refreshBacklinks,
     setIsMouseOverPreview,
+    setInlineEditElement,
     setShowBacklinks,
     setShowImageHelper,
     showBacklinks,
@@ -1680,6 +1844,8 @@ const PreviewContainer = createContainer(() => {
     sourceScheme,
     sourceUri,
     theme,
+    toggleAllSections,
+    toggleUnderlayMode,
     zoomLevel,
   };
 });

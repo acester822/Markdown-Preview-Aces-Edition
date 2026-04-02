@@ -6,7 +6,67 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 See [semantic_versioning.md](./semantic_versioning.md) for a local reference on how version numbers should be incremented.
 
+## [0.10.0] - 2026-04-02
+
+### Added
+
+- **Collapsible heading sections** (`crossnote/src/webview/components/Preview.tsx`, `crossnote/src/webview/containers/preview.ts`): Toggle buttons (▼/▶) injected into every h1–h6 heading; section bodies wrapped in `div.md-section-body`; per-section open/closed state persisted in `localStorage`; collapse-all / expand-all button added to the topbar.
+- **Inline editor (WYSIWYG double-click)** (`crossnote/src/webview/components/InlineEditor.tsx`): Double-clicking any preview element opens a glass-morphism textarea overlay positioned near the element. Edits update the source markdown with live preview debounce; ESC or click-away discards; saves on commit. New files: `InlineEditor.tsx`, `MonacoUnderlay.tsx`.
+- **"Edit in VS Code" in radial action menu** (`crossnote/src/webview/components/FloatingActions.tsx`): Added entry to the floating radial menu so users can jump directly to the VS Code editor from context.
+- **README roadmap table**: Added `## Roadmap & Known Issues` table listing all upcoming features and completed items with status icons.
+
+### Changed
+
+- **README overhaul**: Rewrote for public GitHub release — contextual screenshots, VSIX install instructions, roadmap table. Removed source/dev/build notes.
+- **Codeblock styling** (`crossnote/styles/preview.less`): Themed overlay with lightened background, purple `rgb(185,1,234)` accent borders on both left and right sides, custom line-number gutter colors.
+- **Inline editor textarea style** (`crossnote/styles/preview.less`): `background: rgb(7 7 22 / 6%)`, Victor Mono font, 14px, `1.5px dashed rgb(233 255 0 / 45%)` border, `border-radius: 14px`.
+
+### Fixed
+
+- **`css line-numbers` fenced code block loses syntax highlighting** (`crossnote/src/lib/block-info/parse-block-info.ts`): VS Code injects `{data-source-line="N"}` into the fence info string, turning `css line-numbers` into `css line-numbers {data-source-line="59"}`. The old `{...}` regex `/^([^\s{]*)\s*\{(.*?)\}/` couldn't skip `line-numbers` to reach `{`, fell back to treating the entire string as the language name, and mangled it into broken CSS classes — leaving plain unhighlighted text. Fixed by rewriting the brace branch to capture all words before `{` as language + extra boolean attributes.
+- **Save broken in inline editor and MonacoUnderlay** (`src/extension-common.ts`): `updateMarkdown` used `vscode.workspace.fs.writeFile()` which bypasses VS Code's in-memory buffer. Switched to `applyEdit(WorkspaceEdit)` + `document.save()`.
+- **Inline editor scroll / bottom clipping** (`crossnote/src/webview/components/InlineEditor.tsx`): Retooled positioning: overlay anchored `bottom: 16px`, grows upward, never clips below viewport. One-time `requestAnimationFrame` scroll nudge on open.
+
 ## [Unreleased]
+
+### Changed
+
+- Rewrote `README.md` for public GitHub release: excited tone, contextual screenshot placement, removed source/dev/build instructions, replaced with VSIX install instructions.
+
+### Fixed
+
+- **`css line-numbers` fenced code block loses syntax highlighting** (`crossnote/src/lib/block-info/parse-block-info.ts`): When a fenced block uses `css line-numbers {data-source-line="N"}` (injected by the source-map feature), the old regex `/^([^\s{]*)\s*\{(.*?)\}/` failed to match because `\s*\{` couldn't skip over the word `line-numbers` to reach `{`. The fallback then treated the entire info string as the language name, which turned `data-source-line="59"` into mangled CSS classes after `{}=` were stripped, and no Prism highlighting was applied. Fixed by rewriting the `{...}` branch to capture everything before `{` as space-separated words, using the first as the language and the rest as extra boolean attributes (e.g. `line-numbers` → `attributes['line-numbers'] = true`).
+
+- **Save broken in inline editor and MonacoUnderlay** (`src/extension-common.ts`): `updateMarkdown` was using `vscode.workspace.fs.writeFile()` which writes to disk but does NOT update VS Code's in-memory document buffer. The immediately subsequent `previewProvider.updateMarkdown()` → `openTextDocument().getText()` read stale in-memory content, causing the preview to revert and making save appear broken. Fixed by switching to `vscode.workspace.applyEdit(WorkspaceEdit)` + `document.save()`. This correctly updates the document model, fires `onDidChangeTextDocument` (preview update), then saves to disk (fires `onDidSaveTextDocument` for a final save-triggered preview refresh).
+
+- **Inline editor glitches when content grows** (`crossnote/src/webview/components/InlineEditor.tsx`, `crossnote/styles/preview.less`): The `[rect, value]` scroll effect called `setRect()` after every `scrollTop +=` operation, causing a re-render which re-fired the effect — a feedback loop that became visually chaotic as the textarea grew. Retooled the positioning strategy: overlay is now anchored `bottom: 16px` (grows upward, never clips below viewport). Removed the looping scroll effect and body `paddingBottom` manipulation. Added a single one-time `requestAnimationFrame` scroll on editor open that nudges the page if the target element is in the editor's footprint. Textarea gets `max-height: 48vh` + `overflow-y: auto` so it scrolls internally instead of expanding unboundedly.
+
+ (`crossnote/src/webview/components/InlineEditor.tsx`): Three fixes in one: (1) ESC now calls `e.stopPropagation()` so the outline/TOC no longer opens when saving. (2) Added `valueRef` that is always current even before React re-renders — `commit()` reads `valueRef.current` directly, eliminating the stale closure over `value` that was causing saves to silently discard the latest typed content. (3) Removed `getScrollParent` (was returning `.crossnote` which has `overflow:auto` but `height:auto` and never actually scrolls). Now applies `paddingBottom:60vh` to `document.body` and scrolls `document.scrollingElement` with an instant `scrollTop +=` inside `requestAnimationFrame`, then immediately re-reads the element position and calls `setRect` to reposition the fixed overlay.
+
+- **Inline editor: save on close, live preview, bottom scroll (previous)** (`crossnote/src/webview/components/InlineEditor.tsx`): Fixed a timing race where the 350 ms live-preview debounce timer and `commit()` could both send conflicting `updateMarkdown` messages — `commit` now cancels the pending timer first. Removed Enter-to-save; Enter now adds newlines naturally. Fixed cursor not being captured on double-click open by deferring `.focus()` 80 ms past the triggering mouseup. Fixed the bottom-scroll issue: the preview content scrolls inside `.crossnote[data-for="preview"]`, not `window` — added `getScrollParent()` to find the real scroll container, which now receives the `paddingBottom: 60vh` expansion and the `scrollBy` call.
+
+- **Inline editor: save on close, live preview (previous)** (`crossnote/src/webview/components/InlineEditor.tsx`): Backdrop click and Escape now both save (commit) instead of discarding changes. Preview updates live as the user types via a 350 ms debounced `updateMarkdown` message — changes are built on a local `workingMarkdownRef` snapshot to avoid races with the container's markdown state. A `60vh` invisible spacer is injected into the document body while the editor is open so the browser always has enough scroll room to show the editor fully, even when editing the last element on the page.
+
+- **Context menu compact size** (`crossnote/styles/preview.less`, `crossnote/styles/preview_theme/none.less`): Reduced context menu visual footprint by ~50% — min-width 240→160px, padding halved, font-size reduced to 11px, border radius 18→10px, item padding `8px 14px` → `4px 8px`.
+- **Inline editor glass morphism** (`crossnote/styles/preview.less`): Textarea and hint bar now use transparent backgrounds (`rgba(7,7,22,0.72)`) with `backdrop-filter: blur(20px)` so the preview content behind shows through as frosted glass.
+- **Inline editor placed below element** (`crossnote/src/webview/components/InlineEditor.tsx`): Editor overlay positions at `rect.bottom + 8px` (just below the target element) instead of over it. The element being edited is now fully visible during editing. If the editor would overflow the viewport bottom (e.g. last element in a long document), the page smoothly scrolls down to keep the full editor on screen.
+
+- **Popover Universe global UI chrome** (`crossnote/styles/preview.less`, `crossnote/src/webview/components/FloatingActions.tsx`, `crossnote/styles/preview_theme/none.less`): All extension chrome now follows the Popover Universe neon aesthetic regardless of active preview theme. Gooey FAB blobs changed from amber to dark neon-cyan. Monaco line decoration, line-number gutter, and `<hr>` dividers changed to neon cyan/purple. "End of document" marker styled with Orbitron font and neon glow. Inline editor border changed to neon cyan. Context menu globally themed via `--contexify-*` CSS variables (dark glass, neon active state). Footer bar gets dark glass treatment with neon `border-top` and backdrop blur. Image Helper modal gets dark glass frame with neon border, drop-zone, and button overrides. Code-chunk run buttons get neon glass style. Copy-flash animation changed from amber to neon cyan. Fixed invalid `.floating-action` selector in `none.less` (replaced with actual `.gooey-item`/`.gooey-toggle` classes).
+
+- **Popover Universe "none" theme** (`crossnote/styles/preview_theme/none.less`): Complete dark sci-fi overhaul of the "none" preview theme. Animated star-field + nebula backgrounds, Orbitron headings with neon gradient text and glow animations, glass-morphism blockquotes/code blocks with gradient border masks, neon context menu via contexify CSS variable overrides, neon topbar glass panel, neon scrollbars, and DaisyUI palette override so all interactive UI (topbar buttons, hover states) inherit the `#00f5ff` / `#bf00ff` / `#ff00aa` neon palette.
+
+- **Monaco Underlay bug fixes**: Removed the full-viewport click interceptor div (z-index 5) that was blocking direct pointer events from reaching Monaco. Monaco now receives clicks natively since the preview ghost's `pointer-events: none` allows click-through. FloatingActions is explicitly hidden while in underlay mode (hover events are suppressed by `pointer-events: none` on the ghost, so the actions menu would appear stale/unreachable). (`MonacoUnderlay.tsx`, `FloatingActions.tsx`, `preview.less`)
+- **Monaco Underlay bidirectional sync**: Moving the Monaco cursor now scrolls the preview ghost to the matching rendered element (80 ms debounce). Clicking anywhere in the preview ghost jumps the Monaco cursor and editor scroll position to the corresponding source line. A transparent `div.monaco-click-interceptor` (z-index 5, `cursor: text`) handles the click-to-cursor mapping via `document.elementsFromPoint` + `data-source-line` attribute walking. (`MonacoUnderlay.tsx`, `preview.less`)
+- **Inline editor — double-click to edit**: Double-clicking any block in the preview now opens the inline editor directly, without needing the FloatingActions menu. (`preview.ts`)
+- **Inline editor — ESC key conflict resolved**: The document-level ESC handler (which toggles the sidebar TOC) is now suppressed while the inline editor is open. ESC exclusively closes the inline editor while it is active. (`preview.ts`)
+- **Inline block editor**: Hover any element in the preview to reveal the FloatingActions menu, then click the new pencil icon ("Edit in place"). The rendered element is replaced by a fixed-position textarea pre-filled with the raw markdown source for that block. Press Enter to save (splices the edited lines back into the file and triggers a live preview re-render), Shift+Enter to insert a newline, or Escape / click outside to cancel. (`InlineEditor.tsx`, `preview.ts`, `FloatingActions.tsx`, `Preview.tsx`, `preview.less`)
+- **Monaco Editor Underlay (WYSIWYG)**: Added `MonacoUnderlay.tsx` component — a full-viewport Monaco Editor that appears beneath the semi-transparent preview, letting the raw markdown and rendered output coexist on screen. Click the pencil icon (topbar) to enter edit mode; click the eye icon to exit. Changes auto-save with a 600 ms debounce. The preview ghost is shown at 12% opacity so the render context is always visible while editing. (`MonacoUnderlay.tsx`, `preview.ts`, `Topbar.tsx`, `Preview.tsx`, `preview.less`)
+- Section collapsing via heading toggle buttons: each `h1`–`h6` in the preview now gets a small `▼` toggle button as its first child. Clicking the button wraps and hides that section's content (`div.md-section-body`). State is persisted per section per file in `localStorage`.
+- **Collapse all / Expand all** button in the topbar (between the refresh and table-of-contents buttons). Shows `ArrowsPointingInIcon` when sections are expanded and `ArrowsPointingOutIcon` when all sections are collapsed.
+
+### Changed
+
+- `package.json`: Added `"onStartupFinished"` to `activationEvents` so the extension initializes eagerly after VS Code loads, eliminating the first-open delay when activating a markdown preview.
 
 ## [0.9.2] - 2026-03-31
 

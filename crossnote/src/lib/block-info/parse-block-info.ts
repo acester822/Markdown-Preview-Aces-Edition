@@ -6,19 +6,34 @@ export const parseBlockInfo = (raw = ''): BlockInfo => {
   let attributesAsString: string;
   let attributes: BlockAttributes;
   const trimmedParams = raw.trim();
-  const match =
-    trimmedParams.indexOf('{') !== -1
-      ? trimmedParams.match(/^([^\s{]*)\s*\{(.*?)\}/)
-      : trimmedParams.match(/^([^\s]+)\s+(.+?)$/);
 
-  if (match) {
-    if (match[1].length) {
-      language = match[1];
+  // Extra class words that appear between the language and a `{...}` block,
+  // e.g. "css line-numbers {data-source-line="59"}" → extraWords = ['line-numbers']
+  let extraWords: string[] = [];
+
+  if (trimmedParams.indexOf('{') !== -1) {
+    // Format: "lang [word ...] { attrs }"
+    const braceMatch = trimmedParams.match(/^(.*?)\{(.*?)\}/);
+    if (braceMatch) {
+      const beforeBrace = braceMatch[1].trim().split(/\s+/).filter(Boolean);
+      language = beforeBrace[0] || '';
+      extraWords = beforeBrace.slice(1);
+      attributesAsString = braceMatch[2];
+    } else {
+      language = trimmedParams;
+      attributesAsString = '';
     }
-    attributesAsString = match[2];
   } else {
-    language = trimmedParams;
-    attributesAsString = '';
+    const match = trimmedParams.match(/^([^\s]+)\s+(.+?)$/);
+    if (match) {
+      if (match[1].length) {
+        language = match[1];
+      }
+      attributesAsString = match[2];
+    } else {
+      language = trimmedParams;
+      attributesAsString = '';
+    }
   }
 
   if (attributesAsString) {
@@ -29,6 +44,14 @@ export const parseBlockInfo = (raw = ''): BlockInfo => {
     }
   } else {
     attributes = {};
+  }
+
+  // Inject extra words (e.g. "line-numbers" from "css line-numbers {...}")
+  // as boolean attributes so downstream code can detect them.
+  for (const word of extraWords) {
+    if (word && !(word in attributes)) {
+      attributes[word] = true;
+    }
   }
 
   let classNames = attributes.class ? attributes.class.split(/\s+/) : [];

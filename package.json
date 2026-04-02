@@ -1,7 +1,7 @@
 {
   "name": "markdown-preview-aces-edition",
   "displayName": "%displayName%",
-  "version": "0.9.2",
+  "version": "0.10.0",
   "description": "%description%",
   "categories": [
     "Other"
@@ -691,6 +691,7 @@
     }
   },
   "activationEvents": [
+    "onStartupFinished",
     "onLanguage:markdown",
     "onLanguage:quarto"
   ],

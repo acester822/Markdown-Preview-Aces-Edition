@@ -213,23 +213,28 @@ body:not([data-presentation-mode]) {
     margin-top: 64px !important;
     margin-bottom: 64px !important;
     padding: 8px;
-    color: #bbb;
+    color: rgba(0, 245, 255, 0.28);
     cursor: pointer;
+    font-family: 'Orbitron', 'Victor Mono', monospace;
+    font-size: 0.7em;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-shadow: 0 0 18px rgba(0, 245, 255, 0.18);
 
     &::before {
-      content: 'End of document';
+      content: '── end of document ──';
     }
   }
 
   &[data-preview-theme='dark'] {
     .final-line.end-of-document {
-      color: #555;
+      color: rgba(0, 245, 255, 0.18);
     }
   }
 }
 
 .monaco-line-decoration {
-  background: rgb(112, 162, 42);
+  background: rgba(0, 245, 255, 0.6);
   width: 5px !important;
   margin-left: 3px;
 }
@@ -258,7 +263,8 @@ body.floating-action-open.preview-container {
 
 .gooey-item,
 .gooey-toggle {
-  background: #eab308;
+  background: #07071a;
+  color: #00f5ff;
   border-radius: 100%;
   width: 28px;
   height: 28px;
@@ -269,7 +275,7 @@ body.floating-action-open.preview-container {
   align-items: center;
   justify-content: center;
   transform: translate3d(0, 0, 0);
-  transition: transform ease-out 200ms, background 150ms;
+  transition: transform ease-out 200ms, background 150ms, color 150ms;
   border: none;
   cursor: pointer;
   padding: 0;
@@ -277,8 +283,8 @@ body.floating-action-open.preview-container {
   z-index: 3;
 
   &:hover {
-    background: #fff;
-    color: #92400e;
+    background: #00f5ff;
+    color: #07071a;
   }
 }
 
@@ -295,8 +301,8 @@ body.floating-action-open.preview-container {
   }
 
   &:hover {
-    background: #fde047;
-    color: rgba(0, 0, 0, 0.8);
+    background: #00f5ff;
+    color: #07071a;
   }
 }
 
@@ -351,10 +357,10 @@ pre[class*='language-'] {
 .markdown-preview {
   pre.line-numbers {
     .line-numbers-rows {
-      border-right: 1px solid rgb(255, 238, 0) !important;
+      border-right: 1px solid rgba(0, 245, 255, 0.22) !important;
 
       & > span::before {
-        color: rgb(228, 213, 0) !important;
+        color: rgba(0, 245, 255, 0.5) !important;
         text-align: center;
         width: 3em !important;
       }
@@ -366,6 +372,327 @@ pre[class*='language-'] {
 html body hr {
   height: 4px;
   margin: 32px 0;
-  background: linear-gradient(90deg, transparent, #f5a14c, #ffb366, #f5a14c, transparent);
+  background: linear-gradient(90deg, transparent, #00f5ff, #bf00ff, #00f5ff, transparent);
   border: 0 none;
+}
+
+// ─── Section Collapse ─────────────────────────────────────────────────────────
+
+// Toggle button injected as first child of each h1-h6
+.md-collapse-btn {
+  display: inline-block;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0.3em 0 0;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.4;
+  font-size: 0.65em;
+  line-height: 1;
+  vertical-align: middle;
+  transition: opacity 0.15s ease, transform 0.2s ease;
+  transform-origin: center;
+
+  &::before {
+    content: '▼';
+    display: inline-block;
+    transition: transform 0.2s ease;
+  }
+
+  &.md-collapse-btn--collapsed::before {
+    transform: rotate(-90deg);
+  }
+
+  &:hover {
+    opacity: 1;
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
+h1, h2, h3, h4, h5, h6 {
+  // Ensure the heading itself is a containing block so the button aligns well
+  .md-collapse-btn {
+    font-size: 0.6em;
+    font-weight: normal;
+  }
+}
+
+// Collapsible section body wrapper
+.md-section-body {
+  &.md-collapsed {
+    display: none;
+  }
+}
+
+// ─── Monaco Underlay ──────────────────────────────────────────────────────────
+
+// Monaco editor fills the full viewport as the bottom-most editing layer
+.monaco-underlay-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: auto;
+}
+
+// Smooth opacity transition for the preview layer
+.crossnote[data-for='preview'] {
+  transition: opacity 0.3s ease;
+}
+
+// Underlay edit mode: preview becomes a semi-transparent ghost above Monaco
+body.underlay-mode {
+  overflow: hidden !important;
+
+  .crossnote[data-for='preview'] {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: auto !important;
+    z-index: 4 !important;
+    opacity: 0.12 !important;
+    pointer-events: none !important;
+  }
+}
+
+// Transparent click interceptor — REMOVED (Monaco receives clicks directly
+// via pointer-events fall-through on the ghost layer)
+
+// ─── Inline Editor ────────────────────────────────────────────────────────────
+
+// Full-viewport backdrop behind the editor box. Click = cancel.
+.inline-editor-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: transparent;
+}
+
+// Editor box, positioned below the element being edited via inline top/left/width styles
+.inline-editor-overlay {
+  position: fixed;
+  z-index: 101;
+  display: flex;
+  flex-direction: column;
+  border-radius: 4px;
+  box-shadow: 0 4px 28px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 245, 255, 0.08);
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+// Textarea: monospace, glass-morphism background, auto-height via JS (bounded by max-height)
+.inline-editor-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgb(7 7 22 / 6%);
+  color: #d4d4d4;
+  font-family: 'Victor Mono', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 8px 10px;
+  border: 1.5px dashed rgba(233, 255, 0, 0.45);
+  border-radius: 14px;
+  resize: none;
+  outline: none;
+  overflow-y: auto;
+  max-height: 48vh;
+  min-height: 32px;
+
+  &:focus {
+    border-color: rgba(233, 255, 0, 0.85);
+    box-shadow: 0 0 14px rgba(233, 255, 0, 0.14);
+  }
+}
+
+// ── Popover Universe: Context Menu (global) ───────────────────────────────────
+
+:root {
+  --contexify-menu-bgColor: rgba(8, 8, 18, 0.97);
+  --contexify-menu-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(0, 245, 255, 0.09),
+    inset 0 0 40px rgba(0, 245, 255, 0.015);
+  --contexify-menu-radius: 10px;
+  --contexify-menu-padding: 4px;
+  --contexify-menu-minWidth: 160px;
+  --contexify-separator-color: rgba(0, 245, 255, 0.11);
+  --contexify-separator-margin: 3px;
+  --contexify-item-color: rgba(255, 255, 255, 0.82);
+  --contexify-activeItem-bgColor: rgba(0, 245, 255, 0.09);
+  --contexify-activeItem-color: #00f5ff;
+  --contexify-activeItem-radius: 6px;
+  --contexify-itemContent-padding: 4px 8px;
+  --contexify-rightSlot-color: rgba(255, 255, 255, 0.36);
+  --contexify-activeRightSlot-color: #00f5ff;
+  --contexify-arrow-color: rgba(255, 255, 255, 0.26);
+  --contexify-activeArrow-color: #00f5ff;
+}
+
+.contexify {
+  border: 1px solid rgba(0, 245, 255, 0.1) !important;
+  backdrop-filter: blur(24px) !important;
+  font-size: 11px !important;
+}
+
+.contexify_item:not(.contexify_item-disabled):hover > .contexify_itemContent,
+.contexify_item:not(.contexify_item-disabled):focus > .contexify_itemContent {
+  color: #00f5ff !important;
+  background-color: rgba(0, 245, 255, 0.09) !important;
+  border-radius: 10px !important;
+}
+
+// ── Popover Universe: Footer bar ──────────────────────────────────────────────
+
+.footer > div {
+  background: rgba(8, 8, 18, 0.88) !important;
+  border-top: 1px solid rgba(0, 245, 255, 0.14) !important;
+  box-shadow: 0 -6px 28px rgba(0, 0, 0, 0.55), 0 0 14px rgba(0, 245, 255, 0.04) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(24px) !important;
+
+  svg {
+    color: rgba(255, 255, 255, 0.45) !important;
+    transition: color 0.2s ease !important;
+  }
+
+  button:hover svg,
+  a:hover svg {
+    color: #00f5ff !important;
+    filter: drop-shadow(0 0 5px rgba(0, 245, 255, 0.6)) !important;
+  }
+}
+
+// ── Popover Universe: Topbar (global complement) ──────────────────────────────
+
+.topbar > div {
+  background: rgba(8, 8, 18, 0.72) !important;
+  border: 1px solid rgba(0, 245, 255, 0.1) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 12px rgba(0, 245, 255, 0.05) !important;
+  backdrop-filter: blur(18px) !important;
+  margin-top: 6px !important;
+  margin-right: 6px !important;
+
+  svg,
+  > div {
+    color: rgba(255, 255, 255, 0.6) !important;
+    transition: color 0.2s ease, filter 0.2s ease !important;
+
+    &:hover {
+      color: #00f5ff !important;
+      filter: drop-shadow(0 0 5px rgba(0, 245, 255, 0.55)) !important;
+    }
+  }
+}
+
+// ── Popover Universe: Code chunk run buttons ──────────────────────────────────
+
+.code-chunk-btn-group {
+  .run-btn,
+  .run-all-btn {
+    background: rgba(8, 8, 18, 0.88) !important;
+    border: 1px solid rgba(0, 245, 255, 0.22) !important;
+    color: rgba(0, 245, 255, 0.8) !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    padding: 2px 8px !important;
+    transition: all 0.2s ease !important;
+
+    &:hover {
+      background: rgba(0, 245, 255, 0.12) !important;
+      border-color: rgba(0, 245, 255, 0.5) !important;
+      color: #00f5ff !important;
+      box-shadow: 0 0 10px rgba(0, 245, 255, 0.25) !important;
+    }
+  }
+}
+
+// ── Popover Universe: Image Helper modal ──────────────────────────────────────
+
+dialog.modal::backdrop {
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(10px);
+}
+
+.modal-box {
+  background: rgba(7, 7, 22, 0.98) !important;
+  border: 1px solid rgba(0, 245, 255, 0.14) !important;
+  border-radius: 20px !important;
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(0, 245, 255, 0.06),
+    inset 0 0 60px rgba(0, 245, 255, 0.015) !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+
+@keyframes pu-modal-in {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+.modal[open] .modal-box {
+  animation: pu-modal-in 0.28s ease-out;
+}
+
+// Image drop zones (ImageHelper.tsx uses Tailwind bg-gray-* classes)
+.modal-box {
+  .bg-gray-200,
+  .dark\:bg-gray-700 {
+    background: rgba(0, 245, 255, 0.035) !important;
+    border: 1px dashed rgba(0, 245, 255, 0.18) !important;
+    border-radius: 12px !important;
+    color: rgba(255, 255, 255, 0.55) !important;
+  }
+
+  .hover\:bg-gray-300:hover,
+  .dark\:hover\:bg-gray-800:hover {
+    background: rgba(0, 245, 255, 0.07) !important;
+    border-color: rgba(0, 245, 255, 0.38) !important;
+  }
+
+  .divider {
+    color: rgba(255, 255, 255, 0.28) !important;
+
+    &::before,
+    &::after {
+      background-color: rgba(0, 245, 255, 0.1) !important;
+    }
+  }
+
+  input[type='text'],
+  input[type='url'] {
+    background: rgba(0, 245, 255, 0.04) !important;
+    border: 1px solid rgba(0, 245, 255, 0.2) !important;
+    border-radius: 8px !important;
+    color: rgba(255, 255, 255, 0.82) !important;
+
+    &:focus {
+      border-color: rgba(0, 245, 255, 0.55) !important;
+      box-shadow: 0 0 10px rgba(0, 245, 255, 0.15) !important;
+      outline: none !important;
+    }
+  }
+
+  button {
+    background: rgba(0, 245, 255, 0.08) !important;
+    border: 1px solid rgba(0, 245, 255, 0.22) !important;
+    color: rgba(0, 245, 255, 0.85) !important;
+    border-radius: 10px !important;
+    transition: all 0.2s ease !important;
+
+    &:hover {
+      background: rgba(0, 245, 255, 0.15) !important;
+      border-color: rgba(0, 245, 255, 0.5) !important;
+      box-shadow: 0 0 12px rgba(0, 245, 255, 0.22) !important;
+    }
+  }
 }

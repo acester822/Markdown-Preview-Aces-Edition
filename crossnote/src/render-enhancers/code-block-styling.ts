@@ -87,10 +87,17 @@ export default async function enhance($: CheerioStatic): Promise<void> {
     }
 
     $container.addClass(`language-${language || 'text'}`);
+    // 'line-numbers' as a bare word (css line-numbers) is parsed by
+    // parseBlockAttributes as a key → {line_numbers: true} (after snakeCase
+    // normalisation), NOT added to attributes.class. Detect it here and add
+    // the CSS class so addLineNumbersIfNecessary can see it.
+    if (info.attributes['line_numbers'] || info.attributes['line-numbers']) {
+      $container.addClass('line-numbers');
+    }
     if (info.attributes['class']) {
       $container.addClass(info.attributes['class']);
-      addLineNumbersIfNecessary($container, code);
     }
+    addLineNumbersIfNecessary($container, code);
     // check highlight
     if (info.attributes['highlight']) {
       highlightLines($container, code, info.attributes['highlight']);

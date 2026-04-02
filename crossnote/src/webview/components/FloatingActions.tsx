@@ -3,6 +3,7 @@ import {
   mdiContentCopy,
   mdiIdentifier,
   mdiImage,
+  mdiPencilOutline,
 } from '@mdi/js';
 import Icon from '@mdi/react';
 import classNames from 'classnames';
@@ -42,9 +43,9 @@ function ensureCopyFlashStyle() {
   style.id = 'gooey-copy-flash-style';
   style.textContent = `
     @keyframes gooey-copy-flash {
-      0%   { outline: 2px solid rgba(234, 179, 8, 0);   outline-offset: 3px; }
-      20%  { outline: 2px solid rgba(234, 179, 8, 0.85); outline-offset: 3px; }
-      100% { outline: 2px solid rgba(234, 179, 8, 0);   outline-offset: 6px; }
+      0%   { outline: 2px solid rgba(0, 245, 255, 0);    outline-offset: 3px; }
+      20%  { outline: 2px solid rgba(0, 245, 255, 0.85); outline-offset: 3px; }
+      100% { outline: 2px solid rgba(0, 245, 255, 0);    outline-offset: 6px; }
     }
     .gooey-copy-flash {
       animation: gooey-copy-flash 600ms ease-out forwards;
@@ -58,7 +59,10 @@ export default function FloatingActions() {
   const {
     highlightElement,
     getHighlightElementLineRange,
+    inlineEditElement,
+    isUnderlayMode,
     markdown,
+    setInlineEditElement,
     isVSCodeWebExtension,
   } = PreviewContainer.useContainer();
 
@@ -199,6 +203,7 @@ export default function FloatingActions() {
       ...(hasCodeBlock
         ? [{ icon: mdiCodeTags, title: 'Copy Code', onClick: copyCode }]
         : []),
+      { icon: mdiPencilOutline, title: 'Edit in place', onClick: () => setInlineEditElement(activeEl) },
       { icon: mdiContentCopy, title: 'Copy Markdown', onClick: copyMarkdown },
       ...(activeEl.id
         ? [
@@ -216,6 +221,7 @@ export default function FloatingActions() {
   }, [
     activeEl,
     isVSCodeWebExtension,
+    setInlineEditElement,
     copyCode,
     copyMarkdown,
     copyId,
@@ -223,6 +229,8 @@ export default function FloatingActions() {
   ]);
 
   if (!activeEl) return null;
+  if (isUnderlayMode) return null;
+  if (inlineEditElement) return null;
 
   // Hot zone: one invisible div that covers toggle (collapsed) or toggle+full fan (open).
   // Owns all mouse enter/leave — entering keeps menu alive, leaving schedules close.

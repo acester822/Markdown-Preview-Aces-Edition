@@ -288,7 +288,10 @@ async function getHeaderIncludes(configPath: string, fs: FileSystemApi) {
   function setupMPEExtras() {
     initCodeBlockHoverTracking();
     initCodeBlockCopyButtons();
-    addLineNumbersToCodeBlocks();
+    // Note: line-numbers for code blocks are handled server-side via Prism's
+    // addLineNumbersIfNecessary (triggered by 'css line-numbers' syntax).
+    // The previous addLineNumbersToCodeBlocks() ran on ALL blocks and
+    // conflicted with Prism's layout, breaking syntax highlighting.
   }
 
   let debounceTimer = null;

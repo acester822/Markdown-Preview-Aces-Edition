@@ -1,7 +1,11 @@
 import {
   ArrowPathIcon,
+  ArrowsPointingInIcon,
+  ArrowsPointingOutIcon,
   ChevronUpIcon,
+  EyeIcon,
   ListBulletIcon,
+  PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 import classNames from 'classnames';
 import React, { useCallback } from 'react';
@@ -9,14 +13,18 @@ import PreviewContainer from '../containers/preview';
 
 export function Topbar() {
   const {
+    allSectionsCollapsed,
     clickSidebarTocButton,
     isMobile,
     isMouseOverPreview,
     isPresentationMode,
+    isUnderlayMode,
     postMessage,
     sourceUri,
     showSidebarToc,
     theme,
+    toggleAllSections,
+    toggleUnderlayMode,
   } = PreviewContainer.useContainer();
 
   const backToTop = useCallback(() => {
@@ -54,6 +62,31 @@ export function Topbar() {
           onClick={refreshPreview}
         >
           <ArrowPathIcon className="w-5 h-5"></ArrowPathIcon>
+        </div>
+        <div
+          className="p-2 cursor-pointer hover:text-primary w-5 h-5"
+          title={allSectionsCollapsed ? 'Expand all sections' : 'Collapse all sections'}
+          onClick={toggleAllSections}
+        >
+          {allSectionsCollapsed ? (
+            <ArrowsPointingOutIcon className="w-5 h-5" />
+          ) : (
+            <ArrowsPointingInIcon className="w-5 h-5" />
+          )}
+        </div>
+        <div
+          className={classNames(
+            'p-2 cursor-pointer hover:text-primary w-5 h-5',
+            isUnderlayMode ? 'text-primary' : '',
+          )}
+          title={isUnderlayMode ? 'Exit Monaco edit mode' : 'Monaco edit mode'}
+          onClick={toggleUnderlayMode}
+        >
+          {isUnderlayMode ? (
+            <EyeIcon className="w-5 h-5" />
+          ) : (
+            <PencilSquareIcon className="w-5 h-5" />
+          )}
         </div>
         <div
           className={classNames(

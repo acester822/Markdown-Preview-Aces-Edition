@@ -1,0 +1,603 @@
+// Popover Universe — "none" preview theme for MPAE
+// Dark sci-fi / neon aesthetic inspired by the Popover Universe design system.
+// Applied when previewTheme is set to "none".
+
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap");
+
+// ── Palette ──────────────────────────────────────────────────────────────────
+@neon-blue:   #00f5ff;
+@neon-purple: #bf00ff;
+@neon-pink:   #ff00aa;
+@neon-green:  #00ff88;
+@neon-orange: #ff6b00;
+@dark-bg:     #0a0a0f;
+@card-bg:     rgba(15, 15, 25, 0.92);
+@fg:          rgba(255, 255, 255, 0.88);
+@fg-subtle:   rgba(255, 255, 255, 0.52);
+@fg-strong:   #ffffff;
+@border:      rgba(255, 255, 255, 0.07);
+
+// ── CSS Variable overrides (DaisyUI + contexify) ──────────────────────────────
+:root {
+  // DaisyUI dark base palette
+  --b1: 220 20% 6%;
+  --b2: 220 18% 9%;
+  --b3: 220 15% 11%;
+  --bc: 220 15% 88%;
+
+  // Primary → neon blue (hsl 183 100% 50%)
+  --p:  183 100% 50%;
+  --pc: 220 20% 5%;
+  --pf: 183 100% 44%;
+
+  // Secondary → neon purple (hsl 285 100% 50%)
+  --s:  285 100% 50%;
+  --sc: 220 20% 5%;
+  --sf: 285 100% 44%;
+
+  // Accent → neon pink (hsl 320 100% 50%)
+  --a:  320 100% 50%;
+  --ac: 220 20% 5%;
+  --af: 320 100% 44%;
+
+  // Neutral
+  --n:  220 18% 11%;
+  --nf: 220 18% 8%;
+  --nc: 220 12% 72%;
+
+  // react-contexify context menu — neon glass style
+  --contexify-menu-bgColor: rgba(8, 8, 18, 0.96);
+  --contexify-menu-shadow:
+    0 0 0 1px rgba(0, 245, 255, 0.14),
+    0 20px 60px rgba(0, 0, 0, 0.75),
+    0 0 40px rgba(0, 245, 255, 0.04);
+  --contexify-menu-radius: 10px;
+  --contexify-menu-padding: 4px;
+  --contexify-menu-minWidth: 160px;
+  --contexify-separator-color: rgba(0, 245, 255, 0.12);
+  --contexify-separator-margin: 3px;
+  --contexify-item-color: rgba(255, 255, 255, 0.84);
+  --contexify-activeItem-bgColor: rgba(0, 245, 255, 0.1);
+  --contexify-activeItem-color: @neon-blue;
+  --contexify-activeItem-radius: 6px;
+  --contexify-itemContent-padding: 4px 8px;
+  --contexify-rightSlot-color: rgba(255, 255, 255, 0.38);
+  --contexify-activeRightSlot-color: @neon-blue;
+  --contexify-arrow-color: rgba(255, 255, 255, 0.28);
+  --contexify-activeArrow-color: @neon-blue;
+}
+
+// ── Base document ─────────────────────────────────────────────────────────────
+html {
+  background-color: @dark-bg;
+  overflow: initial;
+  color-scheme: dark;
+}
+
+body {
+  font-family: 'Rajdhani', 'Victor Mono', monospace;
+  font-size: 16px;
+  line-height: 1.65;
+  color: @fg;
+  background-color: @dark-bg;
+  overflow: initial;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  position: relative;
+
+  // ── Animated star field ────────────────────────────────────────────────────
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background-image:
+      radial-gradient(2px 2px at 20px  30px,  #fff,                       transparent),
+      radial-gradient(2px 2px at 40px  70px,  rgba(255,255,255,.8),        transparent),
+      radial-gradient(1px 1px at 90px  40px,  #fff,                       transparent),
+      radial-gradient(2px 2px at 160px 120px, rgba(255,255,255,.9),        transparent),
+      radial-gradient(1px 1px at 230px 80px,  #fff,                       transparent),
+      radial-gradient(2px 2px at 300px 150px, rgba(255,255,255,.7),        transparent),
+      radial-gradient(1px 1px at 350px 200px, #fff,                       transparent),
+      radial-gradient(2px 2px at 420px 50px,  rgba(255,255,255,.8),        transparent),
+      radial-gradient(1px 1px at 500px 180px, #fff,                       transparent),
+      radial-gradient(2px 2px at 560px 90px,  rgba(255,255,255,.6),        transparent),
+      radial-gradient(1px 1px at 620px 250px, #fff,                       transparent),
+      radial-gradient(2px 2px at 700px 120px, rgba(255,255,255,.9),        transparent),
+      radial-gradient(1px 1px at 750px 40px,  #fff,                       transparent),
+      radial-gradient(2px 2px at 820px 200px, rgba(255,255,255,.7),        transparent),
+      radial-gradient(1px 1px at 880px 330px, #fff,                       transparent),
+      radial-gradient(2px 2px at 940px 100px, rgba(255,255,255,.8),        transparent),
+      radial-gradient(1px 1px at 50px  180px, #fff,                       transparent),
+      radial-gradient(2px 2px at 120px 260px, rgba(255,255,255,.6),        transparent),
+      radial-gradient(1px 1px at 270px 310px, #fff,                       transparent),
+      radial-gradient(2px 2px at 480px 340px, rgba(255,255,255,.75),       transparent),
+      radial-gradient(1px 1px at 660px 390px, #fff,                       transparent),
+      radial-gradient(2px 2px at 800px 290px, rgba(255,255,255,.65),       transparent);
+    background-size: 1000px 450px;
+    animation: pu-twinkle 6s ease-in-out infinite;
+  }
+
+  // ── Nebula glow ────────────────────────────────────────────────────────────
+  &::after {
+    content: '';
+    position: fixed;
+    width: 150%;
+    height: 150%;
+    top: -25%;
+    left: -25%;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(191, 0, 255, 0.13) 0%, transparent 52%),
+      radial-gradient(ellipse at 80% 80%, rgba(0, 245, 255, 0.13) 0%, transparent 52%),
+      radial-gradient(ellipse at 40% 60%, rgba(255, 0, 170, 0.09) 0%, transparent 42%),
+      radial-gradient(ellipse at 65% 25%, rgba(0, 255, 136, 0.09) 0%, transparent 42%);
+    animation: pu-nebula 22s ease-in-out infinite;
+  }
+
+  // ── Keyframes ─────────────────────────────────────────────────────────────
+  @keyframes pu-twinkle {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.38; }
+  }
+
+  @keyframes pu-nebula {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    50%       { transform: rotate(12deg) scale(1.12); }
+  }
+
+  @keyframes pu-glow-pulse {
+    0%, 100% { filter: drop-shadow(0 0 18px rgba(0, 245, 255, 0.75)); }
+    50%       { filter: drop-shadow(0 0 38px rgba(191, 0, 255, 0.75)); }
+  }
+
+  @keyframes pu-border-glow {
+    0%, 100% { box-shadow: 0 0 8px rgba(0, 245, 255, 0.25), inset 0 0 8px rgba(0, 245, 255, 0.05); }
+    50%       { box-shadow: 0 0 16px rgba(191, 0, 255, 0.25), inset 0 0 12px rgba(191, 0, 255, 0.05); }
+  }
+
+  // ── First child reset ──────────────────────────────────────────────────────
+  & > :first-child { margin-top: 0; }
+
+  // ── Headings ──────────────────────────────────────────────────────────────
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Orbitron', 'Victor Mono', monospace;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-top: 1.5em;
+    margin-bottom: 0.6em;
+    letter-spacing: 1px;
+    position: relative;
+  }
+
+  h1 {
+    font-size: 2.2em;
+    font-weight: 900;
+    background: linear-gradient(135deg, @neon-blue, @neon-purple, @neon-pink);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: pu-glow-pulse 3.5s ease-in-out infinite;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid;
+    border-image: linear-gradient(90deg, @neon-blue, @neon-purple 60%, transparent) 1;
+    margin-bottom: 0.75em;
+  }
+
+  h2 {
+    font-size: 1.72em;
+    background: linear-gradient(135deg, @neon-purple, @neon-pink);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 12px rgba(191, 0, 255, 0.45));
+    padding-bottom: 0.2em;
+    border-bottom: 1px solid;
+    border-image: linear-gradient(90deg, @neon-purple 40%, transparent) 1;
+    margin-bottom: 0.65em;
+  }
+
+  h3 {
+    font-size: 1.48em;
+    color: @neon-blue;
+    text-shadow: 0 0 14px rgba(0, 245, 255, 0.55);
+  }
+
+  h4 {
+    font-size: 1.24em;
+    color: @neon-green;
+    text-shadow: 0 0 12px rgba(0, 255, 136, 0.45);
+  }
+
+  h5 {
+    font-size: 1.08em;
+    color: @neon-pink;
+    text-shadow: 0 0 10px rgba(255, 0, 170, 0.4);
+  }
+
+  h6 {
+    font-size: 0.96em;
+    color: @neon-orange;
+    text-shadow: 0 0 8px rgba(255, 107, 0, 0.4);
+  }
+
+  // ── Text emphasis ──────────────────────────────────────────────────────────
+  strong {
+    color: @fg-strong;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.22);
+  }
+
+  em {
+    color: @neon-blue;
+    font-style: italic;
+  }
+
+  del {
+    color: @fg-subtle;
+    text-decoration-color: rgba(255, 107, 0, 0.6);
+  }
+
+  mark {
+    background: rgba(191, 0, 255, 0.22);
+    color: lighten(@neon-purple, 20%);
+    border-radius: 4px;
+    padding: 1px 5px;
+    border: 1px solid rgba(191, 0, 255, 0.3);
+  }
+
+  // ── Links ──────────────────────────────────────────────────────────────────
+  a:not([href]) {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  a {
+    color: @neon-blue;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(0, 245, 255, 0.28);
+    transition: color 0.25s ease, border-color 0.25s ease, text-shadow 0.25s ease;
+
+    &:hover {
+      color: @neon-purple;
+      text-shadow: 0 0 10px rgba(191, 0, 255, 0.55);
+      border-bottom-color: rgba(191, 0, 255, 0.5);
+    }
+  }
+
+  // ── Images ────────────────────────────────────────────────────────────────
+  img {
+    max-width: 100%;
+    border-radius: 12px;
+    box-shadow:
+      0 8px 28px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(0, 245, 255, 0.1);
+    transition: box-shadow 0.3s ease;
+
+    &:hover {
+      box-shadow:
+        0 12px 44px rgba(0, 0, 0, 0.65),
+        0 0 24px rgba(0, 245, 255, 0.22);
+    }
+  }
+
+  // ── Paragraphs ────────────────────────────────────────────────────────────
+  & > p {
+    margin-top: 0;
+    margin-bottom: 16px;
+    word-wrap: break-word;
+  }
+
+  // ── Lists ─────────────────────────────────────────────────────────────────
+  & > ul, & > ol {
+    margin-bottom: 16px;
+  }
+
+  ul, ol {
+    padding-left: 2em;
+
+    &.no-list {
+      padding: 0;
+      list-style-type: none;
+    }
+  }
+
+  ul ul, ul ol, ol ol, ol ul {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  li {
+    margin-bottom: 0.25em;
+    color: @fg;
+
+    &.task-list-item { list-style: none; }
+  }
+
+  li > p { margin-top: 0; margin-bottom: 0; }
+
+  ul > li::marker { color: @neon-blue; }
+
+  ol > li::marker {
+    color: @neon-purple;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.82em;
+  }
+
+  .task-list-item-checkbox {
+    margin: 0 0.2em 0.25em -1.8em;
+    vertical-align: middle;
+    accent-color: @neon-blue;
+
+    &:hover { cursor: pointer; }
+  }
+
+  // ── Blockquotes ───────────────────────────────────────────────────────────
+  blockquote {
+    margin: 16px 0;
+    padding: 18px 22px;
+    background: rgba(0, 245, 255, 0.04);
+    border: none;
+    border-left: 3px solid @neon-blue;
+    border-radius: 0 14px 14px 0;
+    color: @fg-subtle;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(8px);
+    animation: pu-border-glow 4s ease-in-out infinite;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 0 14px 14px 0;
+      padding: 1px 1px 1px 0;
+      background: linear-gradient(145deg, rgba(0, 245, 255, 0.18), transparent 55%, rgba(191, 0, 255, 0.1));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    > :first-child { margin-top: 0; }
+    > :last-child  { margin-bottom: 0; }
+  }
+
+  // ── Horizontal rule ───────────────────────────────────────────────────────
+  hr {
+    height: 1px;
+    border: none;
+    background: linear-gradient(90deg, transparent, @neon-blue, @neon-purple, @neon-pink, transparent);
+    margin: 30px 0;
+    opacity: 0.55;
+  }
+
+  // ── Inline code ───────────────────────────────────────────────────────────
+  code {
+    font-family: 'Victor Mono', monospace;
+    font-size: 0.88em;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(0, 245, 255, 0.07);
+    color: @neon-blue;
+    border: 1px solid rgba(0, 245, 255, 0.18);
+  }
+
+  // ── Code blocks ───────────────────────────────────────────────────────────
+  pre {
+    font-family: 'Victor Mono', monospace;
+    margin: 18px 0;
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    // Accent bars on left and right edges — neon purple, matching the theme
+    border-left: 3px solid rgb(185, 1, 234);
+    border-top: 1px solid rgba(185, 1, 234, 0.20);
+    border-right: 3px solid rgb(185, 1, 234);
+    border-bottom: 1px solid rgba(185, 1, 234, 0.20);
+    background: rgba(12, 18, 38, 0.55) !important;
+    backdrop-filter: blur(12px);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.48),
+      inset 0 0 60px rgba(185, 1, 234, 0.02),
+      -3px 0 18px rgba(185, 1, 234, 0.14),
+      3px 0 18px rgba(185, 1, 234, 0.14);
+
+    // Faint scanline pattern to reinforce the "terminal" feel
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0, 245, 255, 0.018) 3px,
+        rgba(0, 245, 255, 0.018) 4px
+      );
+      border-radius: inherit;
+    }
+
+    code {
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      color: rgba(220, 255, 255, 0.92) !important;
+      font-size: 1em;
+    }
+  }
+
+  // ── Tables ────────────────────────────────────────────────────────────────
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 18px 0;
+    overflow: hidden;
+    border: 1px solid rgba(0, 245, 255, 0.14);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.32);
+  }
+
+  thead {
+    background: linear-gradient(135deg, rgba(0, 245, 255, 0.09), rgba(191, 0, 255, 0.09));
+
+    th {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.82em;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 12px 16px;
+      color: @neon-blue;
+      border-bottom: 1px solid rgba(0, 245, 255, 0.18);
+      text-align: left;
+    }
+  }
+
+  tbody {
+    tr:hover { background: rgba(0, 245, 255, 0.04); }
+    tr:last-child td { border-bottom: none; }
+
+    td {
+      padding: 9px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: @fg;
+    }
+  }
+
+  // ── Callouts ──────────────────────────────────────────────────────────────
+  .callout {
+    border-radius: 14px;
+    backdrop-filter: blur(10px);
+    background: rgba(0, 245, 255, 0.05) !important;
+    border: 1px solid rgba(0, 245, 255, 0.14) !important;
+  }
+}
+
+// ── Scrollbars (neon style) ───────────────────────────────────────────────────
+::-webkit-scrollbar            { width: 7px; height: 7px; }
+::-webkit-scrollbar-track      { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, @neon-blue, @neon-purple);
+  border-radius: 8px;
+  border: 2px solid @dark-bg;
+
+  &:hover {
+    background: linear-gradient(180deg, @neon-purple, @neon-pink);
+  }
+}
+
+// ── Topbar / floating UI ──────────────────────────────────────────────────────
+.topbar {
+  background: transparent !important;
+
+  > div {
+    background: rgba(8, 8, 18, 0.72) !important;
+    border: 1px solid rgba(0, 245, 255, 0.12) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 12px rgba(0, 245, 255, 0.06) !important;
+    backdrop-filter: blur(18px) !important;
+    margin-top: 6px !important;
+    margin-right: 6px !important;
+
+    > div {
+      color: rgba(255, 255, 255, 0.65) !important;
+      transition: color 0.2s ease, text-shadow 0.2s ease !important;
+
+      &:hover {
+        color: @neon-blue !important;
+        text-shadow: 0 0 8px rgba(0, 245, 255, 0.55) !important;
+      }
+    }
+  }
+}
+
+// ── Context menu extra polish ─────────────────────────────────────────────────
+.contexify {
+  border: 1px solid rgba(0, 245, 255, 0.12) !important;
+  font-size: 11px !important;
+
+  .contexify_separator {
+    opacity: 0.6;
+  }
+}
+
+.contexify_item:not(.contexify_item-disabled):hover > .contexify_itemContent,
+.contexify_item:not(.contexify_item-disabled):focus > .contexify_itemContent {
+  color: @neon-blue !important;
+  background-color: rgba(0, 245, 255, 0.09) !important;
+  border-radius: 10px !important;
+}
+
+// ── Syntax highlight accent boost (when no prism theme overrides) ─────────────
+.markdown-preview {
+  .token.keyword    { color: @neon-pink !important; }
+  .token.string     { color: @neon-green !important; }
+  .token.number     { color: @neon-orange !important; }
+  .token.comment    { color: rgba(255, 255, 255, 0.35) !important; font-style: italic; }
+  .token.function   { color: @neon-blue !important; }
+  .token.operator   { color: @neon-purple !important; }
+  .token.boolean    { color: @neon-orange !important; }
+  .token.property   { color: lighten(@neon-pink, 15%) !important; }
+  .token.attr-name  { color: @neon-blue !important; }
+  .token.attr-value { color: @neon-green !important; }
+  .token.tag        { color: @neon-purple !important; }
+}
+
+// ── Sidebar TOC ───────────────────────────────────────────────────────────────
+.md-sidebar-toc {
+  background: rgba(8, 8, 18, 0.88) !important;
+  border-left: 1px solid rgba(0, 245, 255, 0.12) !important;
+  backdrop-filter: blur(18px) !important;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5) !important;
+
+  a {
+    color: @fg-subtle !important;
+    border-bottom: none !important;
+    transition: color 0.2s ease !important;
+
+    &:hover {
+      color: @neon-blue !important;
+      text-shadow: 0 0 8px rgba(0, 245, 255, 0.45) !important;
+    }
+  }
+
+  .md-toc-link.highlighted a {
+    color: @neon-blue !important;
+    font-weight: 700 !important;
+  }
+}
+
+// ── Collapse buttons ──────────────────────────────────────────────────────────
+.md-collapse-btn {
+  color: rgba(0, 245, 255, 0.45) !important;
+
+  &:hover { color: @neon-blue !important; }
+
+  &::before { color: @neon-blue !important; }
+}
+
+// ── Gooey FAB menu (none-theme icons colour boost) ────────────────────────────
+// The global preview.less already swaps yellow → neon-dark; here we reinforce
+// icon colour so they stay crisp against the dark goo blobs.
+.gooey-item,
+.gooey-toggle {
+  color: @neon-blue !important;
+
+  &:hover {
+    background: @neon-blue !important;
+    color: @dark-bg !important;
+  }
+}
+
+// ── Footer bar ────────────────────────────────────────────────────────────────
+.footer > div {
+  background: rgba(8, 8, 18, 0.9) !important;
+  border-top: 1px solid rgba(0, 245, 255, 0.14) !important;
+  box-shadow: 0 -6px 28px rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(24px) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
