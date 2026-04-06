@@ -113,3 +113,9 @@ Parser and rendering fixes, markdown transform updates, and dependency updates a
 
 See [`CHANGELOG.md`](CHANGELOG.md) for the full history.
 
+---
+
+## Using GitHub Copilot Agent with This Extension
+
+If you use GitHub Copilot agent mode while developing or customizing this extension, see [`docs/cloud-agent-handoff.md`](docs/cloud-agent-handoff.md) for an explanation of cloud agent handoff and what the agent can access (including live website code).
+
