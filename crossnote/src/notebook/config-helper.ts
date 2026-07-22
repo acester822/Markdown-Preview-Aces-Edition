@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as less from 'less';
+import * as os from 'os';
 import * as path from 'path';
 import { interpretJS } from '../utility';
 import {
@@ -12,6 +13,29 @@ import {
   getDefaultNotebookConfig,
   getDefaultParserConfig,
 } from './types';
+import { FTR10_FALLBACK_COLORS_CSS } from './ftr10-default-colors';
+
+/**
+ * MPAE consumes the FTR10 Codex / Architect design tokens (--ftr10-*) so its
+ * markdown preview is themed by the same palette as the rest of the workbench.
+ *
+ * The live tokens live at `~/.ftr10/css.files/colors.css` (written at runtime by
+ * the Architect theme engine). If that file exists we read it so the preview
+ * tracks the user's current theme. If it is absent (Architect not installed, or a
+ * fresh machine) we fall back to a bundled snapshot so the preview still renders
+ * fully themed. A node-FS helper is used here because config-helper's FileSystemApi
+ * is the *workspace* FS, not the user's home directory.
+ */
+async function getFtr10ColorsCss(): Promise<string> {
+  const colorsCssPath = path.join(os.homedir(), '.ftr10', 'css.files', 'colors.css');
+  try {
+    await fs.promises.access(colorsCssPath, fs.constants.R_OK);
+    return (await fs.promises.readFile(colorsCssPath, 'utf-8')).trim();
+  } catch (_) {
+    // Architect not present (or no palette yet) → graceful bundled default.
+    return FTR10_FALLBACK_COLORS_CSS;
+  }
+}
 
 /**
  * Load the configs from the given directory path.
@@ -55,14 +79,35 @@ export async function loadConfigsInDirectory(
 }
 
 async function getGlobalStyles(configPath: string, fs: FileSystemApi) {
-  const globalLessPath = path.join(configPath, './style.less');
-
-  let fileContent: string;
+  // 1) FTR10 design tokens, live from Architect if installed, else bundled fallback.
+  let ftr10Css = '';
   try {
-    fileContent = await fs.readFile(globalLessPath);
-  } catch (e) {
-    // create style.less file
-    fileContent = `
+    ftr10Css = await getFtr10ColorsCss();
+  } catch (_) {
+    ftr10Css = FTR10_FALLBACK_COLORS_CSS;
+  }
+
+  // 2) Legacy crossnote user-style (style.less) — still honored as a user override layer.
+  const globalLessPath = path.join(configPath, './style.less');
+  let userStyleCss = '';
+  try {
+    const fileContent = await fs.readFile(globalLessPath);
+    userStyleCss = await new Promise<string>((resolve) => {
+      less.render(fileContent, { paths: [path.dirname(globalLessPath)] }, (error, output) => {
+        if (error) {
+          resolve(`html body:before {
+            content: "Failed to compile \`style.less\`. ${error}" !important;
+            padding: 2em !important;
+          }
+          .crossnote.crossnote { display: none !important; }`);
+        } else {
+          resolve(output?.css || '');
+        }
+      });
+    });
+  } catch (_) {
+    // style.less does not exist yet — seed it so users can customize (legacy behaviour).
+    const seed = `
 /* Please visit the URL below for more information: */
 /*   https://shd101wyy.github.io/markdown-preview-enhanced/#/customize-css */
 
@@ -71,30 +116,14 @@ async function getGlobalStyles(configPath: string, fs: FileSystemApi) {
   // eg: background-color: blue;
 }
 `;
-    await fs.writeFile(globalLessPath, fileContent);
+    try {
+      await fs.writeFile(globalLessPath, seed);
+    } catch (_) {
+      /* non-fatal */
+    }
   }
 
-  return await new Promise<string>((resolve) => {
-    const generateErrorMessage = (error) => {
-      return `html body:before {
-        content: "Failed to compile \`style.less\`. ${error}" !important;
-        padding: 2em !important;
-      }
-      .crossnote.crossnote { display: none !important; }`;
-    };
-
-    less.render(
-      fileContent,
-      { paths: [path.dirname(globalLessPath)] },
-      (error, output) => {
-        if (error) {
-          return resolve(generateErrorMessage(error));
-        } else {
-          return resolve(output?.css || '');
-        }
-      },
-    );
-  });
+  return `${ftr10Css}\n${userStyleCss}`;
 }
 
 async function getHeaderIncludes(configPath: string, fs: FileSystemApi) {

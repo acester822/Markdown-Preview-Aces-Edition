@@ -384,7 +384,6 @@ window["initRevealPresentation"] = async function() {
     'atom-light.css': 'atom-light.css',
     'atom-material.css': 'atom-material.css',
     'github-dark.css': 'github-dark.css',
-    'github-light.css': 'github.css',
     'gothic.css': 'github.css',
     'medium.css': 'github.css',
     'monokai.css': 'monokai.css',
@@ -392,9 +391,7 @@ window["initRevealPresentation"] = async function() {
     'night.css': 'darcula.css', // <= this is bad
     'one-dark.css': 'one-dark.css',
     'one-light.css': 'one-light.css',
-    'solarized-light.css': 'solarized-light.css',
     'solarized-dark.css': 'solarized-dark.css',
-    'vue.css': 'vue.css',
   };
 
   private static AutoPrismThemeMapForPresentation = {
@@ -475,15 +472,8 @@ window["initRevealPresentation"] = async function() {
     )}">`;
 
     // check preview theme and revealjs theme
-    if (!isPresentationMode) {
-      styles += `<link rel="stylesheet" href="${utility.addFileProtocol(
-        path.resolve(
-          utility.getCrossnoteBuildDirectory(),
-          `./styles/preview_theme/${this.notebook.config.previewTheme}`,
-        ),
-        vscodePreviewPanel,
-      )}">`;
-    } else {
+    // Preview theme system removed — all preview styles are compiled into preview.css
+    if (isPresentationMode) {
       styles += `<link rel="stylesheet" href="${utility.addFileProtocol(
         path.resolve(
           utility.getCrossnoteBuildDirectory(),
@@ -675,22 +665,8 @@ window["initRevealPresentation"] = async function() {
         <link rel="stylesheet" href="${webviewCss}">
         ${styles}
         ${
-          // NOTE: This is none.css and we are in vscode preview.
-          // We need to set the background color and foreground color.
-          this.notebook.config.previewTheme === 'none.css' && vscodePreviewPanel
-            ? `<style>
-  html, body {
-    background-color: var(--vscode-editor-background);
-    color: var(--vscode-editor-foreground);
-  }
-
-  pre code {
-    color: var(--vscode-editor-foreground);
-    tab-size: 4;
-  }  
-  </style>
-`
-            : ''
+          // NOTE: background/foreground injection removed — mpae theme vars / none.less handle this.
+          ''
         }
         <link rel="stylesheet" href="${utility.addFileProtocol(
           path.resolve(
@@ -1060,21 +1036,26 @@ if (typeof(window['Reveal']) !== 'undefined') {
         }
       } else {
         // preview theme
-        styleCSS +=
-          !this.notebook.config.printBackground &&
-          !yamlConfig['print_background']
-            ? await this.fs.readFile(
-                path.resolve(
-                  utility.getCrossnoteBuildDirectory(),
-                  `./styles/preview_theme/github-light.css`,
-                ),
-              )
-            : await this.fs.readFile(
-                path.resolve(
-                  utility.getCrossnoteBuildDirectory(),
-                  `./styles/preview_theme/${this.notebook.config.previewTheme}`,
-                ),
-              );
+        styleCSS += await this.fs.readFile(
+          path.resolve(
+            utility.getCrossnoteBuildDirectory(),
+            './styles/preview.css',
+          ),
+        );
+
+        const previewTheme = this.notebook.config.previewTheme || 'none.css';
+        if (previewTheme !== 'none.css') {
+          try {
+            styleCSS += await this.fs.readFile(
+              path.resolve(
+                utility.getCrossnoteBuildDirectory(),
+                `./styles/preview_theme/${previewTheme}`,
+              ),
+            );
+          } catch (e) {
+            // ignore missing preview theme file and continue with preview.css
+          }
+        }
       }
 
       // style template
@@ -1084,6 +1065,19 @@ if (typeof(window['Reveal']) !== 'undefined') {
           './styles/style-template.css',
         ),
       );
+
+      // ensure exported HTML uses the current theme background and text colors
+      styleCSS += `
+        html, body {
+          background: var(--ftr10-bg, #ffffff) !important;
+          color: var(--ftr10-text, #000000) !important;
+        }
+        body {
+          background-image: var(--ftr10-bg-pattern) !important;
+          background-size: var(--ftr10-bg-pattern-size) !important;
+          background-position: var(--ftr10-bg-pattern-pos, 0 0) !important;
+        }
+      `;
 
       // markdown-it-admonition
       if (html.indexOf('admonition') > 0) {
@@ -1107,6 +1101,18 @@ if (typeof(window['Reveal']) !== 'undefined') {
     } catch (e) {
       styleCSS = '';
     }
+
+    // force dark export background if theme is not loaded correctly
+    styleCSS += `
+body, html {
+  background-color: #12131b !important;
+  color: #d7d7d7 !important;
+}
+.crossnote.markdown-preview,
+.markdown-preview {
+  background-color: #12131b !important;
+}
+`;
 
     // global styles
     const globalStyles = this.notebook.config.globalCss;
@@ -1174,6 +1180,33 @@ sidebarTOCBtn.addEventListener('click', function(event) {
       return '';
     });
     styles = imports + styles;
+    styles += `
+pre[data-role="codeBlock"] {
+  position: relative;
+}
+.copy-code-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 10;
+  border: none;
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+.copy-code-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+.copy-code-button:focus {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+`;
 
     html = `
   <!DOCTYPE html>
@@ -1193,6 +1226,53 @@ sidebarTOCBtn.addEventListener('click', function(event) {
       ${styles}
       </style>
       ${await this.resolvePathsInHeader(this.notebook.config.includeInHeader)}
+      <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const codeBlocks = document.querySelectorAll('pre[data-role="codeBlock"]');
+        codeBlocks.forEach((pre) => {
+          if (pre.dataset.copyCodeButtonAdded) {
+            return;
+          }
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'copy-code-button';
+          button.textContent = 'Copy';
+          button.title = 'Copy code block';
+          button.setAttribute('aria-label', 'Copy code block');
+          button.addEventListener('click', function(event) {
+            event.stopPropagation();
+            const codeEl = pre.querySelector('code') || pre;
+            const text = (codeEl.textContent || '').trim();
+            if (!text) {
+              return;
+            }
+            const copyText = async () => {
+              try {
+                await navigator.clipboard.writeText(text);
+                button.textContent = 'Copied!';
+              } catch (error) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                button.textContent = 'Copied!';
+              }
+              setTimeout(() => {
+                button.textContent = 'Copy';
+              }, 1200);
+            };
+            copyText();
+          });
+          pre.appendChild(button);
+          pre.dataset.copyCodeButtonAdded = 'true';
+        });
+      });
+      </script>
     </head>
     <body ${options.isForPrint ? '' : 'for="html-export"'} ${
       yamlConfig['isPresentationMode'] ? 'data-presentation-mode' : ''
