@@ -595,9 +595,16 @@ const PreviewContainer = createContainer(() => {
               files: any,
             ) => {
               // Store updated data in the hidden span so it can be persisted
+              // Strip collaborators from appState: JSON converts Maps to
+              // plain objects, and Excalidraw expects collaborators to be
+              // a Map (or undefined). Leaving it as {} causes "forEach is
+              // not a function" when Excalidraw re-initializes.
+              const safeAppState = appState
+                ? { ...appState, collaborators: undefined }
+                : undefined;
               const data = JSON.stringify({
                 elements: nextElements,
-                appState,
+                appState: safeAppState,
                 files,
               });
               const dataSpan = el.querySelector('span');
