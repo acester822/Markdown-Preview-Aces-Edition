@@ -580,11 +580,12 @@ const PreviewContainer = createContainer(() => {
 
         el.innerHTML = '';
         const root = createRoot(el);
-        // Track initial mount to suppress the first onChange
-        // fired by Excalidraw on initialization — it always
-        // differs from the existing JSON and triggers a useless
-        // save/edit reload cycle.
-        let suppressNextOnChange = true;
+        // SuppressExcalidraw onChange events for a short window after
+        // initial mount. Excalidraw fires onChange during initialization
+        // (React 18 concurrent rendering may trigger multiple), and
+        // saving on any of them triggers a file watcher event → preview
+        // reload → re-mount → more onChange → infinite loop.
+        const suppressOnChangeUntil = Date.now() + 500;
         root.render(
           React.createElement(Excalidraw, {
             initialData: {
@@ -613,14 +614,14 @@ const PreviewContainer = createContainer(() => {
               });
               const dataSpan = el.querySelector('span');
               if (dataSpan) {
-                // Suppress the first onChange — Excalidraw fires onChange on initial
-                // mount with data that differs from the existing JSON. This
-                // triggers a useless save-edit-reload cycle.
-                if (suppressNextOnChange) {
-                  suppressNextOnChange = false;
-                  if (dataSpan.textContent !== data) {
-                    dataSpan.textContent = data;
-                  }
+                // SuppressExcalidraw onChange events for a short window
+                // after initial mount — Excalidraw fires onChange during
+                // initialization (React 18 concurrent rendering may
+                // trigger multiple), and saving on any of them triggers
+                // a file watcher event → preview reload → re-mount →
+                // more onChange → infinite loop.
+                if (Date.now() < suppressOnChangeUntil) {
+                  dataSpan.textContent = data;
                   return;
                 }
                 // Skip saving if the data hasn't changed — avoids a
