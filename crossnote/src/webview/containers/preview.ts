@@ -8,6 +8,8 @@ import { createContainer } from 'unstated-next';
 import { Backlink, WebviewConfig } from '../../notebook';
 import { sanitizeHtml } from '../lib/sanitize';
 import { isBackgroundColorLight } from '../lib/utility';
+import { Excalidraw } from '@excalidraw/excalidraw';
+import { createRoot } from 'react-dom/client';
 
 window['jQuery'] = $;
 window['$'] = $;
@@ -537,31 +539,13 @@ const PreviewContainer = createContainer(() => {
     }
   }, []);
 
-  const renderExcalidraw = useCallback(async () => {
+  const renderExcalidraw = useCallback(() => {
     if (!previewElement.current) {
       return;
     }
     const excalidrawEls =
       previewElement.current.querySelectorAll('.excalidraw');
     if (!excalidrawEls.length) {
-      return;
-    }
-    let Excalidraw: React.ComponentType<any>;
-    try {
-      const mod = await import('@excalidraw/excalidraw');
-      Excalidraw = mod.Excalidraw;
-    } catch {
-      // excalidraw package not available
-      return;
-    }
-    if (!Excalidraw) {
-      return;
-    }
-    // Dynamically import ReactDOM for rendering the component
-    try {
-      await import('react-dom/client');
-    } catch {
-      // react-dom/client not available
       return;
     }
     for (let i = 0; i < excalidrawEls.length; i++) {
@@ -581,8 +565,7 @@ const PreviewContainer = createContainer(() => {
         const files = parsed.files ?? null;
 
         el.innerHTML = '';
-        const reactDom = await import('react-dom/client');
-        const root = reactDom.createRoot(el);
+        const root = createRoot(el);
         root.render(
           React.createElement(Excalidraw, {
             initialData: {

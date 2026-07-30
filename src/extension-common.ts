@@ -690,9 +690,7 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
         return;
       }
       const blockPrefix = text.substring(0, blockStart);
-      const blockSuffix = text.substring(
-        blockStart + blockMarker.length,
-      );
+      const blockSuffix = text.substring(blockStart + blockMarker.length);
       const remaining = blockSuffix.replace(/^[\s\S]*?```/, '');
       const newContent =
         blockPrefix + blockMarker + '\n' + data + '\n```' + remaining;
