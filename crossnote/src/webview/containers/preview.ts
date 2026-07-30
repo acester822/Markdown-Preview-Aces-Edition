@@ -586,6 +586,11 @@ const PreviewContainer = createContainer(() => {
         // saving on any of them triggers a file watcher event → preview
         // reload → re-mount → more onChange → infinite loop.
         const suppressOnChangeUntil = Date.now() + 500;
+        // Use a keyed wrapper to force full remount when the content
+        // changes externally — this avoids React re-reconciling the
+        // same Excalidraw instance with new initialData, which fires
+        // spurious onChange calls during reconciliation.
+        const excalidrawKey = sourceUri.current + '_' + jsonText.substring(0, 20);
         root.render(
           React.createElement(Excalidraw, {
             initialData: {
