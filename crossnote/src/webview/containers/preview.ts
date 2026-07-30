@@ -618,13 +618,27 @@ const PreviewContainer = createContainer(() => {
         mountEl.appendChild(btn);
         (async () => {
           try {
+            // Use the preview's themed background for the rendered SVG so the
+            // read-only preview follows light/dark mode. Excalidraw's
+            // exportToSvg paints a solid <rect> with viewBackgroundColor, so
+            // by default the preview is always white. We read the computed
+            // background of the (themed) mount node and only keep the
+            // diagram's own background if it was explicitly set to a non-white
+            // color.
+            const themeBg =
+              getComputedStyle(mountEl).backgroundColor || '#ffffff';
+            const storedBg =
+              appState && appState.viewBackgroundColor;
+            const viewBg =
+              storedBg && storedBg.toLowerCase() !== '#ffffff'
+                ? storedBg
+                : themeBg;
             const svg = await exportToSvg({
               elements: elements as any,
               appState: {
                 ...(appState ?? {}),
                 collaborators: undefined,
-                viewBackgroundColor:
-                  (appState && appState.viewBackgroundColor) || '#ffffff',
+                viewBackgroundColor: viewBg,
               } as any,
               files: files as any,
             });

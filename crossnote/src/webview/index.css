@@ -13,7 +13,7 @@
 .excalidraw {
   position: relative;
   width: 100%;
-  min-height: 840px;
+  min-height: 1000px;
   margin: 1rem 0;
   border: 1px solid var(--b3, #e5e7eb);
   border-radius: 0.5rem;
@@ -23,10 +23,9 @@
 .excalidraw-mount {
   position: relative;
   width: 100%;
-  /* Edit mode height (view mode overrides this to "auto" below). Doubled
-     from the original 420px so the live editor canvas is tall enough to use
-     comfortably. */
-  height: 840px;
+  /* Edit mode height (view mode overrides this to "auto" below). Tall enough
+     for comfortable drawing. */
+  height: 1000px;
 }
 
 
@@ -37,6 +36,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Themed background so the read-only SVG preview follows light/dark mode.
+     The SVG itself is exported with this same background as its base rect. */
   background: var(--b2, #f3f4f6);
   padding: 0.5rem;
 }
@@ -44,7 +45,10 @@
 .excalidraw-mount.excalidraw-view svg {
   max-width: 100%;
   height: auto;
-  max-height: 600px;
+  max-height: 900px;
+  /* The exported SVG paints a solid background rect; keep it crisp and let
+     it sit on the themed container. */
+  border-radius: 0.375rem;
 }
 
 .excalidraw-edit-btn {
