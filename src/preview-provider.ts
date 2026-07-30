@@ -4,6 +4,7 @@ import { tmpdir } from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { Uri } from 'vscode';
+import { shouldSuppressExcalidrawRefresh } from './excalidraw-supress';
 import { getMPEConfig } from './config';
 import NotebooksManager from './notebooks-manager';
 import {
@@ -802,6 +803,14 @@ export class PreviewProvider {
     }
 
     const sourceUriString = sourceUri.toString();
+    // Skip live-update refresh if Excalidraw just saved this file. A refresh
+    // would reload the preview, tear down the Excalidraw instance, and fire
+    // onChange again — an infinite save/reload loop. Excalidraw already holds
+    // the latest data locally from its own onChange handler.
+    if (shouldSuppressExcalidrawRefresh(sourceUriString)) {
+      return;
+    }
+
     const debounceMs = getMPEConfig<number>('liveUpdateDebounceMs') ?? 300;
 
     // Clear existing timeout for this sourceUri (proper debounce behavior)
