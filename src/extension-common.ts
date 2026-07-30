@@ -676,6 +676,13 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
     });
   }
 
+  // Serialize Excalidraw saves per URI. Two rapid saves (e.g. a debounced
+  // onChange save racing a preview-refresh-triggered re-save) both reading the
+  // same stale document text could otherwise interleave their applyEdit calls
+  // and mangle the block. Chaining them guarantees they run one at a time
+  // against the document state the previous one produced.
+  const excalidrawSaveChains = new Map<string, Promise<void>>();
+
   async function updateExcalidrawData({
     uri,
     data,
@@ -683,37 +690,54 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
     uri: string;
     data: string;
   }) {
-    try {
-      const sourceUri = vscode.Uri.parse(uri);
-      const document = await vscode.workspace.openTextDocument(sourceUri);
-      const text = document.getText();
-      const blockMarker = '```excalidraw';
-      const blockStart = text.indexOf(blockMarker);
-      if (blockStart === -1) {
-        return;
+    const run = async () => {
+      try {
+        // Never write data we can't even parse — this is the guard that stops
+        // malformed JSON ever reaching the markdown file.
+        JSON.parse(data);
+
+        const sourceUri = vscode.Uri.parse(uri);
+        const document = await vscode.workspace.openTextDocument(sourceUri);
+        const text = document.getText();
+        const blockMarker = '```excalidraw';
+        const blockStart = text.indexOf(blockMarker);
+        if (blockStart === -1) {
+          return;
+        }
+        // Locate the CLOSING fence that ends this block (the first ``` after
+        // the marker), rather than a greedy regex that could mis-slice.
+        const afterMarker = blockStart + blockMarker.length;
+        const closeIdx = text.indexOf('```', afterMarker);
+        if (closeIdx === -1) {
+          return;
+        }
+        const blockPrefix = text.substring(0, blockStart);
+        const remaining = text.substring(closeIdx + 3);
+        const newContent =
+          blockPrefix + blockMarker + '\n' + data + '\n```' + remaining;
+
+        // IMPORTANT: set the suppression BEFORE mutating the document. Both
+        // onDidChangeTextDocument (live-update path) and onDidSaveTextDocument
+        // fire synchronously during applyEdit/save, so the flag must be active
+        // first or the preview refresh fires and restarts Excalidraw, which
+        // re-fires onChange → another save → infinite loop.
+        suppressExcalidrawRefreshFor(sourceUri.toString());
+        const edit = new vscode.WorkspaceEdit();
+        const fullRange = new vscode.Range(
+          new vscode.Position(0, 0),
+          new vscode.Position(document.lineCount, 0),
+        );
+        edit.replace(sourceUri, fullRange, newContent);
+        await vscode.workspace.applyEdit(edit);
+        await document.save();
+      } catch (error) {
+        console.error(error);
       }
-      const blockPrefix = text.substring(0, blockStart);
-      const blockSuffix = text.substring(blockStart + blockMarker.length);
-      const remaining = blockSuffix.replace(/^[\s\S]*?```/, '');
-      const newContent =
-        blockPrefix + blockMarker + '\n' + data + '\n```' + remaining;
-      const fullRange = new vscode.Range(
-        new vscode.Position(0, 0),
-        new vscode.Position(document.lineCount, 0),
-      );
-      // IMPORTANT: set the suppression BEFORE mutating the document. Both
-      // onDidChangeTextDocument (live-update path) and onDidSaveTextDocument
-      // fire synchronously during applyEdit/save, so the flag must be active
-      // first or the preview refresh fires and restarts Excalidraw, which
-      // re-fires onChange → another save → infinite loop.
-      suppressExcalidrawRefreshFor(sourceUri.toString());
-      const edit = new vscode.WorkspaceEdit();
-      edit.replace(sourceUri, fullRange, newContent);
-      await vscode.workspace.applyEdit(edit);
-      await document.save();
-    } catch (error) {
-      console.error(error);
-    }
+    };
+
+    const prev = excalidrawSaveChains.get(uri) ?? Promise.resolve();
+    const next = prev.then(run, run);
+    excalidrawSaveChains.set(uri, next);
   }
 
   async function showBacklinks({

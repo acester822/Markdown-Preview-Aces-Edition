@@ -8,8 +8,14 @@ import { createContainer } from 'unstated-next';
 import { Backlink, WebviewConfig } from '../../notebook';
 import { sanitizeHtml } from '../lib/sanitize';
 import { isBackgroundColorLight } from '../lib/utility';
-import { Excalidraw } from '@excalidraw/excalidraw';
+import { Excalidraw, exportToSvg } from '@excalidraw/excalidraw';
 import { createRoot } from 'react-dom/client';
+
+// Tracks the React root mounted for each .excalidraw block so we can
+// unmount and recreate it cleanly (mode toggle, resize relaunch) instead of
+// calling createRoot() twice on the same node (which throws).
+const excalidrawRoots = new Map<HTMLElement, any>();
+
 
 window['jQuery'] = $;
 window['$'] = $;
@@ -555,50 +561,100 @@ const PreviewContainer = createContainer(() => {
       if (!jsonText) {
         continue;
       }
+      // Guard against a corrupted block so we never mount on garbage JSON.
+      let parsed: any;
       try {
-        const parsed = JSON.parse(jsonText);
-        const elements = Array.isArray(parsed)
-          ? parsed
-          : parsed.elements ?? [];
-        const appState = Array.isArray(parsed)
-          ? undefined
-          : parsed.appState;
-        const files = Array.isArray(parsed) || !parsed.files
-          ? undefined
-          : parsed.files;
+        parsed = JSON.parse(jsonText);
+      } catch (err) {
+        el.innerHTML = `<pre class="language-text"><code>Excalidraw block is not valid JSON:\n${escape(
+          String(err),
+        )}</code></pre>`;
+        continue;
+      }
+      const elements = Array.isArray(parsed)
+        ? parsed
+        : parsed.elements ?? [];
+      const appState = Array.isArray(parsed)
+        ? undefined
+        : parsed.appState;
+      const files = Array.isArray(parsed) || !parsed.files
+        ? undefined
+        : parsed.files;
 
-        // Excalidraw expects appState.collaborators to be a Map or undefined.
-        // JSON serialization converts Maps to plain objects {}, which causes
-        // "collaborators.forEach is not a function" crashes. Strip it so
-        // Excalidraw initializes an empty Map internally.
+      // First preview shows the diagram as a read-only SVG with an "Edit"
+      // button in the top-right; clicking it swaps to the live editor.
+      const mode = el.dataset.excalidrawMode === 'edit' ? 'edit' : 'view';
+
+      // Unmount any existing React root for this block before re-mounting
+      // (mode toggle / resize relaunch) — calling createRoot twice on the
+      // same node throws.
+      const existing = excalidrawRoots.get(el);
+      if (existing) {
+        existing.unmount();
+        excalidrawRoots.delete(el);
+      }
+
+      let mountEl = el.querySelector(
+        ':scope > div.excalidraw-mount',
+      ) as HTMLElement | null;
+      if (!mountEl) {
+        mountEl = document.createElement('div');
+        mountEl.className = 'excalidraw-mount';
+        el.appendChild(mountEl);
+      } else {
+        mountEl.innerHTML = '';
+      }
+      mountEl.classList.toggle('excalidraw-view', mode === 'view');
+
+      if (mode === 'view') {
+        const btn = document.createElement('button');
+        btn.className = 'excalidraw-edit-btn';
+        btn.type = 'button';
+        btn.textContent = 'Edit diagram';
+        btn.addEventListener('click', () => {
+          el.dataset.excalidrawMode = 'edit';
+          renderExcalidraw();
+        });
+        mountEl.appendChild(btn);
+        (async () => {
+          try {
+            const svg = await exportToSvg({
+              elements: elements as any,
+              appState: {
+                ...(appState ?? {}),
+                collaborators: undefined,
+                viewBackgroundColor:
+                  (appState && appState.viewBackgroundColor) || '#ffffff',
+              } as any,
+              files: files as any,
+            });
+            svg.setAttribute('width', '100%');
+            svg.style.maxWidth = '100%';
+            svg.style.height = 'auto';
+            mountEl!.insertBefore(svg, btn);
+          } catch (error) {
+            mountEl!.innerHTML = `<pre class="language-text"><code>${escape(
+              error.toString(),
+            )}</code></pre>`;
+          }
+        })();
+      } else {
+        // Live editor. Capture the API ref and serialize from the official
+        // getters (clean, serializable data) rather than the raw onChange
+        // args, which can contain mid-mutation / non-serializable values that
+        // would write malformed JSON to disk.
         const safeAppState = appState
           ? { ...appState, collaborators: undefined }
           : undefined;
-
-        // IMPORTANT: do NOT wipe el.innerHTML here. The hidden <span> holds
-        // the JSON source of truth; wiping it would break the onChange
-        // equality check below and make every change save -> reload ->
-        // remount -> onChange -> save forever. Mount the React component into
-        // a dedicated child node we can safely clear on re-render instead.
-        let mountEl = el.querySelector(
-          ':scope > div.excalidraw-mount',
-        ) as HTMLElement | null;
-        if (!mountEl) {
-          mountEl = document.createElement('div');
-          mountEl.className = 'excalidraw-mount';
-          el.appendChild(mountEl);
-        } else {
-          // Clear any previously mounted React tree before re-mounting so we
-          // don't stack duplicate Excalidraw instances on live updates.
-          mountEl.innerHTML = '';
-        }
+        const apiHolder: { current: any } = { current: null };
         const root = createRoot(mountEl);
-        // lastSentRef is seeded from the block's current JSON, so the
-        // onChange events Excalidraw fires during initialization (which
-        // re-serialize the same scene) are treated as no-ops.
+        excalidrawRoots.set(el, root);
         let lastSentRef = jsonText;
         root.render(
           React.createElement(Excalidraw, {
+            excalidrawAPI: (api: any) => {
+              apiHolder.current = api;
+            },
             initialData: {
               elements,
               appState: safeAppState,
@@ -606,28 +662,43 @@ const PreviewContainer = createContainer(() => {
             },
             viewModeEnabled: false,
             autoFocus: false,
-            onChange: (
-              nextElements: readonly any[],
-              appState: any,
-              files: any,
-            ) => {
-              // Strip collaborators from appState: JSON converts Maps to
-              // plain objects, and Excalidraw expects collaborators to be
-              // a Map (or undefined). Leaving it as {} causes "forEach is
-              // not a function" when Excalidraw re-initializes.
-              const safeAppState = appState
-                ? { ...appState, collaborators: undefined }
-                : undefined;
-              const data = JSON.stringify({
-                elements: nextElements,
-                appState: safeAppState,
-                files,
-              });
-              // Skip saving if the data hasn't changed from what we already
-              // have. Excalidraw fires onChange on mount and on every internal
-              // tick; comparing against lastSentRef (seeded from the block's
-              // current JSON) prevents a save -> reload -> remount -> onChange
-              // -> save infinite loop.
+            renderTopRightUI: () =>
+              React.createElement(
+                'button',
+                {
+                  className: 'excalidraw-done-btn',
+                  type: 'button',
+                  onClick: () => {
+                    el.dataset.excalidrawMode = 'view';
+                    renderExcalidraw();
+                  },
+                },
+                'Done',
+              ),
+            onChange: () => {
+              const api = apiHolder.current;
+              if (!api) {
+                return;
+              }
+              let data: string;
+              try {
+                data = JSON.stringify({
+                  elements: api.getSceneElements(),
+                  appState: {
+                    ...api.getAppState(),
+                    collaborators: undefined,
+                  },
+                  files: api.getFiles(),
+                });
+              } catch {
+                return;
+              }
+              // Never write something that isn't valid JSON.
+              try {
+                JSON.parse(data);
+              } catch {
+                return;
+              }
               if (data === lastSentRef) {
                 return;
               }
@@ -635,8 +706,6 @@ const PreviewContainer = createContainer(() => {
                 span.textContent = data;
               }
               lastSentRef = data;
-              // Debounced save to markdown file (1s to avoid rapid saves
-              // during continuous rendering while still being responsive)
               clearTimeout((el as any).__excalidrawSaveTimeout);
               (el as any).__excalidrawSaveTimeout = setTimeout(() => {
                 postMessage('updateExcalidrawData', [
@@ -649,13 +718,30 @@ const PreviewContainer = createContainer(() => {
             },
           }),
         );
-      } catch (error) {
-        el.innerHTML = `<pre class="language-text"><code>${escape(
-          error.toString(),
-        )}</code></pre>`;
       }
     }
   }, [postMessage]);
+
+  // Re-render Excalidraw shortly after the preview is resized so the canvas
+  // picks up the new dimensions. Without this the toolbar/menu can be clipped
+  // at the size the webview iframe had at mount (e.g. opening the preview in a
+  // tiny window, or docking it). Debounced ~800ms so we don't thrash while the
+  // user is still dragging. Re-mounting reads the current JSON from the hidden
+  // span (kept in sync by onChange) so no drawing data is lost.
+  useEffect(() => {
+    let timer: any;
+    const onResize = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        renderExcalidraw();
+      }, 800);
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      clearTimeout(timer);
+    };
+  }, [renderExcalidraw]);
 
   const runCodeChunk = useCallback(
     (id: string | null) => {
