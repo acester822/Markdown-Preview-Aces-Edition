@@ -594,7 +594,6 @@ const PreviewContainer = createContainer(() => {
               appState: any,
               files: any,
             ) => {
-              // Store updated data in the hidden span so it can be persisted
               // Strip collaborators from appState: JSON converts Maps to
               // plain objects, and Excalidraw expects collaborators to be
               // a Map (or undefined). Leaving it as {} causes "forEach is
@@ -609,9 +608,16 @@ const PreviewContainer = createContainer(() => {
               });
               const dataSpan = el.querySelector('span');
               if (dataSpan) {
+                // Skip saving if the data hasn't changed — avoids a
+                // save/edit reload loop when Excalidraw fires onChange
+                // continuously during initialization or idle.
+                if (dataSpan.textContent === data) {
+                  return;
+                }
                 dataSpan.textContent = data;
               }
-              // Debounced save to markdown file
+              // Debounced save to markdown file (1s to avoid rapid saves
+              // during continuous rendering while still being responsive)
               clearTimeout((el as any).__excalidrawSaveTimeout);
               (el as any).__excalidrawSaveTimeout = setTimeout(() => {
                 postMessage('updateExcalidrawData', [
@@ -620,7 +626,7 @@ const PreviewContainer = createContainer(() => {
                     data,
                   },
                 ]);
-              }, 500);
+              }, 1000);
             },
           }),
         );
