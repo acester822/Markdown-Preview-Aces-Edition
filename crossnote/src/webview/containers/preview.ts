@@ -560,9 +560,15 @@ const PreviewContainer = createContainer(() => {
       }
       try {
         const parsed = JSON.parse(jsonText);
-        const elements = parsed.elements ?? parsed;
-        const appState = parsed.appState ?? {};
-        const files = parsed.files ?? null;
+        const elements = Array.isArray(parsed)
+          ? parsed
+          : parsed.elements ?? [];
+        const appState = Array.isArray(parsed)
+          ? undefined
+          : parsed.appState;
+        const files = Array.isArray(parsed) || !parsed.files
+          ? undefined
+          : parsed.files;
 
         el.innerHTML = '';
         const root = createRoot(el);
