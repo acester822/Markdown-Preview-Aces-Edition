@@ -570,13 +570,21 @@ const PreviewContainer = createContainer(() => {
           ? undefined
           : parsed.files;
 
+        // Excalidraw expects appState.collaborators to be a Map or undefined.
+        // JSON serialization converts Maps to plain objects {}, which causes
+        // "collaborators.forEach is not a function" crashes. Strip it so
+        // Excalidraw initializes an empty Map internally.
+        const safeAppState = appState
+          ? { ...appState, collaborators: undefined }
+          : undefined;
+
         el.innerHTML = '';
         const root = createRoot(el);
         root.render(
           React.createElement(Excalidraw, {
             initialData: {
               elements,
-              appState,
+              appState: safeAppState,
               files,
             },
             viewModeEnabled: false,
