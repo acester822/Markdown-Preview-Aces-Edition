@@ -584,7 +584,7 @@ const PreviewContainer = createContainer(() => {
         // fired by Excalidraw on initialization — it always
         // differs from the existing JSON and triggers a useless
         // save/edit reload cycle.
-        let isInitialMount = true;
+        let suppressNextOnChange = true;
         root.render(
           React.createElement(Excalidraw, {
             initialData: {
@@ -613,16 +613,14 @@ const PreviewContainer = createContainer(() => {
               });
               const dataSpan = el.querySelector('span');
               if (dataSpan) {
-                // Skip saving if this is the initial mount — Excalidraw
-                // always fires onChange on mount with data that differs
-                // slightly from what we already stored, triggering a
-                // useless save/edit reload cycle.
-                if (isInitialMount) {
-                  isInitialMount = false;
-                  if (dataSpan.textContent === data) {
-                    return;
+                // Suppress the first onChange — Excalidraw fires onChange on initial
+                // mount with data that differs from the existing JSON. This
+                // triggers a useless save-edit-reload cycle.
+                if (suppressNextOnChange) {
+                  suppressNextOnChange = false;
+                  if (dataSpan.textContent !== data) {
+                    dataSpan.textContent = data;
                   }
-                  dataSpan.textContent = data;
                   return;
                 }
                 // Skip saving if the data hasn't changed — avoids a
