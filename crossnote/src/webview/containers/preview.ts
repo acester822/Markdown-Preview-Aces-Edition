@@ -550,9 +550,6 @@ const PreviewContainer = createContainer(() => {
     }
     for (let i = 0; i < excalidrawEls.length; i++) {
       const el = excalidrawEls[i] as HTMLElement;
-      if (el.hasAttribute('data-processed')) {
-        continue;
-      }
       const span = el.querySelector('span');
       const jsonText = span?.textContent?.trim() ?? '';
       if (!jsonText) {
@@ -578,20 +575,28 @@ const PreviewContainer = createContainer(() => {
           ? { ...appState, collaborators: undefined }
           : undefined;
 
-        el.innerHTML = '';
-        const root = createRoot(el);
-        // Track what we last sent to the extension so we never send
-        // duplicate save commands — this is the key fix from vibe-documents.
-        // Excalidraw fires onChange during initialization and on every
-        // internal change; if we always compare against lastSent, we only
-        // save when the data genuinely differs from what we already stored.
+        // IMPORTANT: do NOT wipe el.innerHTML here. The hidden <span> holds
+        // the JSON source of truth; wiping it would break the onChange
+        // equality check below and make every change save -> reload ->
+        // remount -> onChange -> save forever. Mount the React component into
+        // a dedicated child node we can safely clear on re-render instead.
+        let mountEl = el.querySelector(
+          ':scope > div.excalidraw-mount',
+        ) as HTMLElement | null;
+        if (!mountEl) {
+          mountEl = document.createElement('div');
+          mountEl.className = 'excalidraw-mount';
+          el.appendChild(mountEl);
+        } else {
+          // Clear any previously mounted React tree before re-mounting so we
+          // don't stack duplicate Excalidraw instances on live updates.
+          mountEl.innerHTML = '';
+        }
+        const root = createRoot(mountEl);
+        // lastSentRef is seeded from the block's current JSON, so the
+        // onChange events Excalidraw fires during initialization (which
+        // re-serialize the same scene) are treated as no-ops.
         let lastSentRef = jsonText;
-        // SuppressExcalidraw onChange events for a short window after
-        // initial mount. Excalidraw fires onChange during initialization
-        // (React 18 concurrent rendering may trigger multiple), and
-        // saving on any of them triggers a file watcher event → preview
-        // reload → re-mount → more onChange → infinite loop.
-        const suppressOnChangeUntil = Date.now() + 500;
         root.render(
           React.createElement(Excalidraw, {
             initialData: {
@@ -618,27 +623,18 @@ const PreviewContainer = createContainer(() => {
                 appState: safeAppState,
                 files,
               });
-              const dataSpan = el.querySelector('span');
-              if (dataSpan) {
-                // SuppressExcalidraw onChange events for a short window
-                // after initial mount — Excalidraw fires onChange during
-                // initialization (React 18 concurrent rendering may
-                // trigger multiple), and saving on any of them triggers
-                // a file watcher event → preview reload → re-mount →
-                // more onChange → infinite loop.
-                if (Date.now() < suppressOnChangeUntil) {
-                  dataSpan.textContent = data;
-                  return;
-                }
-                // Skip saving if the data hasn't changed — avoids a
-                // save/edit reload loop when Excalidraw fires onChange
-                // continuously during initialization or idle.
-                if (data === lastSentRef) {
-                  return;
-                }
-                dataSpan.textContent = data;
-                lastSentRef = data;
+              // Skip saving if the data hasn't changed from what we already
+              // have. Excalidraw fires onChange on mount and on every internal
+              // tick; comparing against lastSentRef (seeded from the block's
+              // current JSON) prevents a save -> reload -> remount -> onChange
+              // -> save infinite loop.
+              if (data === lastSentRef) {
+                return;
               }
+              if (span) {
+                span.textContent = data;
+              }
+              lastSentRef = data;
               // Debounced save to markdown file (1s to avoid rapid saves
               // during continuous rendering while still being responsive)
               clearTimeout((el as any).__excalidrawSaveTimeout);
@@ -653,7 +649,6 @@ const PreviewContainer = createContainer(() => {
             },
           }),
         );
-        el.setAttribute('data-processed', 'true');
       } catch (error) {
         el.innerHTML = `<pre class="language-text"><code>${escape(
           error.toString(),

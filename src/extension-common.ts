@@ -701,17 +701,16 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
         new vscode.Position(0, 0),
         new vscode.Position(document.lineCount, 0),
       );
+      // IMPORTANT: set the suppression BEFORE mutating the document. Both
+      // onDidChangeTextDocument (live-update path) and onDidSaveTextDocument
+      // fire synchronously during applyEdit/save, so the flag must be active
+      // first or the preview refresh fires and restarts Excalidraw, which
+      // re-fires onChange → another save → infinite loop.
+      suppressExcalidrawRefreshFor(sourceUri.toString());
       const edit = new vscode.WorkspaceEdit();
       edit.replace(sourceUri, fullRange, newContent);
       await vscode.workspace.applyEdit(edit);
       await document.save();
-      // Suppress the next preview refresh triggered by onDidSaveTextDocument
-      // and the live-update path. The Excalidraw component already re-rendered
-      // its content locally via onChange, so we don't need the extension to
-      // push a new updateHtml that would reload the preview and restart the
-      // Excalidraw instance, which would fire onChange again — an infinite
-      // save-reload loop.
-      suppressExcalidrawRefreshFor(sourceUri.toString());
     } catch (error) {
       console.error(error);
     }

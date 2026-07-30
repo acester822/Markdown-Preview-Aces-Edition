@@ -679,6 +679,13 @@ window["initRevealPresentation"] = async function() {
           JSAndCssFiles,
           vscodePreviewPanel,
         )}
+        <link rel="stylesheet" href="${utility.addFileProtocol(
+          path.resolve(
+            utility.getCrossnoteBuildDirectory(),
+            './webview/excalidraw.css',
+          ),
+          vscodePreviewPanel,
+        )}">
         ${await this.resolvePathsInHeader(this.notebook.config.includeInHeader)}
         ${head}
       </head>

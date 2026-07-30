@@ -1,5 +1,7 @@
+const fs = require('fs');
 const { context, build } = require('esbuild');
 const { dependencies, devDependencies } = require('./package.json');
+const path = require('path');
 const { tailwindPlugin } = require('esbuild-plugin-tailwindcss');
 
 /**
@@ -101,6 +103,26 @@ async function main() {
 
       // Webview
       await build(webviewConfig);
+
+      // Copy the prebuilt Excalidraw stylesheet next to the bundled webview
+      // so the preview HTML can <link> it. esbuild can't resolve the
+      // "@excalidraw/excalidraw/index.css" subpath export, and we don't want
+      // to bundle 150KB of CSS into the JS, so we ship it as a static file and
+      // inject a <link> from the markdown engine's HTML template.
+      const excalidrawCssSrc =
+        './node_modules/@excalidraw/excalidraw/dist/prod/index.css';
+      const excalidrawCssDest = './out/webview/excalidraw.css';
+      try {
+        if (fs.existsSync(excalidrawCssSrc)) {
+          fs.mkdirSync(path.dirname(excalidrawCssDest), { recursive: true });
+          fs.copyFileSync(excalidrawCssSrc, excalidrawCssDest);
+          console.log('Copied Excalidraw CSS ->', excalidrawCssDest);
+        } else {
+          console.warn('Excalidraw CSS not found at', excalidrawCssSrc);
+        }
+      } catch (cssErr) {
+        console.error('Failed to copy Excalidraw CSS:', cssErr);
+      }
     }
   } catch (error) {
     console.error(error);
