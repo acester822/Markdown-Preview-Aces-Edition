@@ -18,8 +18,7 @@ import {
 import path = require('path');
 
 let editorScrollDelay = Date.now();
-
-// hide default vscode markdown preview buttons if necessary
+const _suppressExcalidrawUpdateForUris = new Set<string>();
 const hideDefaultVSCodeMarkdownPreviewButtons = vscode.workspace
   .getConfiguration('markdown-preview-aces-edition')
   .get<boolean>('hideDefaultVSCodeMarkdownPreviewButtons');
@@ -702,6 +701,15 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
       edit.replace(sourceUri, fullRange, newContent);
       await vscode.workspace.applyEdit(edit);
       await document.save();
+      // Suppress the next preview refresh triggered by onDidSaveTextDocument.
+      // The Excalidraw component already re-rendered its content locally via
+      // onChange → we don't need the extension to push a new updateHtml that
+      // would reload the preview and restart the Excalidraw instance, which
+      // would fire onChange again, creating an infinite save-reload loop.
+      _suppressExcalidrawUpdateForUris.add(sourceUri.toString());
+      setTimeout(() => {
+        _suppressExcalidrawUpdateForUris.delete(sourceUri.toString());
+      }, 1000);
     } catch (error) {
       console.error(error);
     }
@@ -762,6 +770,14 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(async (document) => {
       if (isMarkdownFile(document)) {
+        const uriString = document.uri.toString();
+        // Skip preview refresh if this save was triggered by our own
+        // Excalidraw onChange handler — the preview already has the latest
+        // data locally and reloading would restart Excalidraw and re-trigger
+        // onChange, causing an infinite save-reload loop.
+        if (_suppressExcalidrawUpdateForUris.has(uriString)) {
+          return;
+        }
         const previewProvider = await getPreviewContentProvider(document.uri);
         previewProvider.updateMarkdown(document.uri, true);
       } else {
