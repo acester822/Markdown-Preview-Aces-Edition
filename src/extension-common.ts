@@ -673,6 +673,42 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
     });
   }
 
+  async function updateExcalidrawData({
+    uri,
+    data,
+  }: {
+    uri: string;
+    data: string;
+  }) {
+    try {
+      const sourceUri = vscode.Uri.parse(uri);
+      const document = await vscode.workspace.openTextDocument(sourceUri);
+      const text = document.getText();
+      const blockMarker = '```excalidraw';
+      const blockStart = text.indexOf(blockMarker);
+      if (blockStart === -1) {
+        return;
+      }
+      const blockPrefix = text.substring(0, blockStart);
+      const blockSuffix = text.substring(
+        blockStart + blockMarker.length,
+      );
+      const remaining = blockSuffix.replace(/^[\s\S]*?```/, '');
+      const newContent =
+        blockPrefix + blockMarker + '\n' + data + '\n```' + remaining;
+      const fullRange = new vscode.Range(
+        new vscode.Position(0, 0),
+        new vscode.Position(document.lineCount, 0),
+      );
+      const edit = new vscode.WorkspaceEdit();
+      edit.replace(sourceUri, fullRange, newContent);
+      await vscode.workspace.applyEdit(edit);
+      await document.save();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   async function showBacklinks({
     uri,
     forceRefreshingNotes,
@@ -1248,6 +1284,13 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(
       '_crossnote.updateMarkdown',
       updateMarkdown,
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      '_crossnote.updateExcalidrawData',
+      updateExcalidrawData,
     ),
   );
 

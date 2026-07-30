@@ -34,6 +34,7 @@ const ensureClassInAttributes = (
 
 // same order as in docs
 const supportedLanguages = [
+  'excalidraw',
   'mermaid',
   'puml',
   'plantuml',
@@ -227,6 +228,18 @@ async function renderDiagram({
               normalizedInfo.language,
             ),
           )}><script type="WaveDrom">${code}</script></div>`;
+          break;
+        }
+        case 'excalidraw': {
+          // excalidraw is rendered on the client using exportToSvg
+          // Store the JSON content in a hidden span; the preview.ts renderer
+          // finds .excalidraw blocks and calls window['excalidrawExportToSvg']
+          $output = `<div ${stringifyBlockAttributes(
+            ensureClassInAttributes(
+              normalizedInfo.attributes,
+              normalizedInfo.language,
+            ),
+          )}><span style="display:none">${escape(code)}</span></div>`;
           break;
         }
         case 'puml':

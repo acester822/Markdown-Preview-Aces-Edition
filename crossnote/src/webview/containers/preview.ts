@@ -1,4 +1,5 @@
 import CryptoJS, { SHA256 } from 'crypto-js';
+import React from 'react';
 import { escape } from 'html-escaper';
 import $ from 'jquery';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -536,6 +537,98 @@ const PreviewContainer = createContainer(() => {
     }
   }, []);
 
+  const renderExcalidraw = useCallback(async () => {
+    if (!previewElement.current) {
+      return;
+    }
+    const excalidrawEls =
+      previewElement.current.querySelectorAll('.excalidraw');
+    if (!excalidrawEls.length) {
+      return;
+    }
+    let Excalidraw: React.ComponentType<any>;
+    try {
+      const mod = await import('@excalidraw/excalidraw');
+      Excalidraw = mod.Excalidraw;
+    } catch {
+      // excalidraw package not available
+      return;
+    }
+    if (!Excalidraw) {
+      return;
+    }
+    // Dynamically import ReactDOM for rendering the component
+    try {
+      await import('react-dom/client');
+    } catch {
+      // react-dom/client not available
+      return;
+    }
+    for (let i = 0; i < excalidrawEls.length; i++) {
+      const el = excalidrawEls[i] as HTMLElement;
+      if (el.hasAttribute('data-processed')) {
+        continue;
+      }
+      const span = el.querySelector('span');
+      const jsonText = span?.textContent?.trim() ?? '';
+      if (!jsonText) {
+        continue;
+      }
+      try {
+        const parsed = JSON.parse(jsonText);
+        const elements = parsed.elements ?? parsed;
+        const appState = parsed.appState ?? {};
+        const files = parsed.files ?? null;
+
+        el.innerHTML = '';
+        const reactDom = await import('react-dom/client');
+        const root = reactDom.createRoot(el);
+        root.render(
+          React.createElement(Excalidraw, {
+            initialData: {
+              elements,
+              appState,
+              files,
+            },
+            viewModeEnabled: false,
+            autoFocus: false,
+            onChange: (
+              nextElements: readonly any[],
+              appState: any,
+              files: any,
+            ) => {
+              // Store updated data in the hidden span so it can be persisted
+              const data = JSON.stringify({
+                elements: nextElements,
+                appState,
+                files,
+              });
+              const dataSpan = el.querySelector('span');
+              if (dataSpan) {
+                dataSpan.textContent = data;
+              }
+              // Debounced save to markdown file
+              clearTimeout((el as any).__excalidrawSaveTimeout);
+              (el as any).__excalidrawSaveTimeout = setTimeout(() => {
+                postMessage('updateExcalidrawData', [
+                  {
+                    uri: sourceUri.current,
+                    data,
+                  },
+                ]);
+              }, 500);
+            },
+          }),
+        );
+        el.setAttribute('data-processed', 'true');
+      } catch (error) {
+        el.innerHTML = `<pre class="language-text"><code>${escape(
+          error.toString(),
+        )}</code></pre>`;
+      }
+    }
+  }, [postMessage]);
+
   const runCodeChunk = useCallback(
     (id: string | null) => {
       if (!config.enableScriptExecution || !id) {
@@ -795,7 +888,7 @@ const PreviewContainer = createContainer(() => {
       hiddenPreviewElement.current.innerHTML = '';
       setRenderedHtml(previewElement.current.innerHTML);
 
-      await Promise.all([renderInteractiveVega(), renderMermaid()]);
+      await Promise.all([renderInteractiveVega(), renderMermaid(), renderExcalidraw()]);
 
       setupCodeChunks();
       setupSectionCollapse();
@@ -810,6 +903,7 @@ const PreviewContainer = createContainer(() => {
     renderInteractiveVega,
     renderMathJax,
     renderMermaid,
+    renderExcalidraw,
     renderWavedrom,
     setupCodeChunks,
     setupSectionCollapse,
@@ -1526,6 +1620,11 @@ const PreviewContainer = createContainer(() => {
         refreshBacklinks();
       } else if (data.command === 'deletedNote') {
         refreshBacklinks();
+      } else if (data.command === 'updateExcalidrawData') {
+        const { uri, data: excalidrawData } = data;
+        postMessage('updateExcalidrawData', [
+          { uri, data: excalidrawData },
+        ]);
       }
     },
     [

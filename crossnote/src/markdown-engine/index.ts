@@ -915,6 +915,11 @@ if (typeof(window['Reveal']) !== 'undefined') {
       </script>`;
     }
 
+    // excalidraw
+    if (html.indexOf(' class="excalidraw') >= 0) {
+      // excalidraw is loaded via npm package in preview.ts, no script tag needed
+    }
+
     // presentation
     let presentationScript = '';
     let presentationStyle = '';
