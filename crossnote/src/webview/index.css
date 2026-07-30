@@ -59,9 +59,12 @@
   padding: 4px 10px;
   font-size: 12px;
   border-radius: 6px;
-  border: 1px solid var(--b3, #d1d5db);
-  background: var(--b1, #fff);
-  color: var(--bc, #111);
+  /* Opaque background + shadow so the button stays legible on themes that
+     use transparency / dark backgrounds. */
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #ffffff;
+  color: #111111;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   cursor: pointer;
 }
 
@@ -69,7 +72,9 @@
   padding: 2px 8px;
   font-size: 12px;
   border-radius: 4px;
-  border: 1px solid #d1d5db;
-  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #ffffff;
+  color: #111111;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   cursor: pointer;
 }
