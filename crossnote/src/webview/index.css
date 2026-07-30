@@ -36,9 +36,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Themed background so the read-only SVG preview follows light/dark mode.
-     The SVG itself is exported with this same background as its base rect. */
-  background: var(--b2, #f3f4f6);
+  /* Opaque editor background (VS Code injects this as a solid color) so the
+     read-only SVG preview follows light/dark mode. We use this rather than
+     the translucent daisyUI --b2 so the preview never shows white through a
+     transparent theme layer. */
+  background: var(--vscode-editor-background, #ffffff);
   padding: 0.5rem;
 }
 

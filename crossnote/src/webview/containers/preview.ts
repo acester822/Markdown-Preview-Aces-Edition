@@ -618,21 +618,24 @@ const PreviewContainer = createContainer(() => {
         mountEl.appendChild(btn);
         (async () => {
           try {
-            // Use the preview's themed background for the rendered SVG so the
-            // read-only preview follows light/dark mode. Excalidraw's
-            // exportToSvg paints a solid <rect> with viewBackgroundColor, so
-            // by default the preview is always white. We read the computed
-            // background of the (themed) mount node and only keep the
-            // diagram's own background if it was explicitly set to a non-white
-            // color.
-            const themeBg =
-              getComputedStyle(mountEl).backgroundColor || '#ffffff';
-            const storedBg =
-              appState && appState.viewBackgroundColor;
+            // Use the SOLID editor background for the rendered SVG so the
+            // read-only preview follows light/dark mode. We must NOT use the
+            // mount node's computed background: on themes that layer
+            // transparency over a darker base, that resolves to a translucent
+            // color, and Excalidraw paints it as a semi-transparent <rect> so
+            // the white page behind shows through (looks white). VS Code
+            // injects --vscode-editor-background into every webview as a fully
+            // OPAQUE color, which is exactly what we want.
+            const docCs = getComputedStyle(document.documentElement);
+            const vsTheme =
+              docCs.getPropertyValue('--vscode-editor-background').trim() ||
+              docCs.backgroundColor ||
+              '#ffffff';
+            const storedBg = appState && appState.viewBackgroundColor;
             const viewBg =
               storedBg && storedBg.toLowerCase() !== '#ffffff'
                 ? storedBg
-                : themeBg;
+                : vsTheme;
             const svg = await exportToSvg({
               elements: elements as any,
               appState: {
