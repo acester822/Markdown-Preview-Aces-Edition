@@ -580,20 +580,20 @@ const PreviewContainer = createContainer(() => {
 
         el.innerHTML = '';
         const root = createRoot(el);
+        // Track what we last sent to the extension so we never send
+        // duplicate save commands — this is the key fix from vibe-documents.
+        // Excalidraw fires onChange during initialization and on every
+        // internal change; if we always compare against lastSent, we only
+        // save when the data genuinely differs from what we already stored.
+        let lastSentRef = jsonText;
         // SuppressExcalidraw onChange events for a short window after
         // initial mount. Excalidraw fires onChange during initialization
         // (React 18 concurrent rendering may trigger multiple), and
         // saving on any of them triggers a file watcher event → preview
         // reload → re-mount → more onChange → infinite loop.
         const suppressOnChangeUntil = Date.now() + 500;
-        // Use a keyed wrapper to force full remount when the content
-        // changes externally — this avoids React re-reconciling the
-        // same Excalidraw instance with new initialData, which fires
-        // spurious onChange calls during reconciliation.
-        const excalidrawKey = sourceUri.current + '_' + jsonText.substring(0, 20);
         root.render(
           React.createElement(Excalidraw, {
-            key: excalidrawKey,
             initialData: {
               elements,
               appState: safeAppState,
@@ -633,10 +633,11 @@ const PreviewContainer = createContainer(() => {
                 // Skip saving if the data hasn't changed — avoids a
                 // save/edit reload loop when Excalidraw fires onChange
                 // continuously during initialization or idle.
-                if (dataSpan.textContent === data) {
+                if (data === lastSentRef) {
                   return;
                 }
                 dataSpan.textContent = data;
+                lastSentRef = data;
               }
               // Debounced save to markdown file (1s to avoid rapid saves
               // during continuous rendering while still being responsive)
