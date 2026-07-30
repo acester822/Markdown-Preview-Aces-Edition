@@ -1,5 +1,19 @@
 const fs = require('fs');
 const { context, build } = require('esbuild');
+
+function copyDir(src, dest) {
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const s = path.join(src, entry.name);
+    const d = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      fs.mkdirSync(d, { recursive: true });
+      copyDir(s, d);
+    } else {
+      fs.copyFileSync(s, d);
+    }
+  }
+}
+
 const { dependencies, devDependencies } = require('./package.json');
 const path = require('path');
 const { tailwindPlugin } = require('esbuild-plugin-tailwindcss');
@@ -112,16 +126,30 @@ async function main() {
       const excalidrawCssSrc =
         './node_modules/@excalidraw/excalidraw/dist/prod/index.css';
       const excalidrawCssDest = './out/webview/excalidraw.css';
+      const excalidrawFontsSrc =
+        './node_modules/@excalidraw/excalidraw/dist/prod/fonts';
+      const excalidrawFontsDest = './out/webview/fonts';
       try {
         if (fs.existsSync(excalidrawCssSrc)) {
           fs.mkdirSync(path.dirname(excalidrawCssDest), { recursive: true });
           fs.copyFileSync(excalidrawCssSrc, excalidrawCssDest);
+          // The Excalidraw CSS references its fonts via relative
+          // url(./fonts/...). Those font files ship under the package's
+          // dist/prod/fonts directory, so copy the whole tree next to the
+          // CSS; otherwise the preview logs 404s for Assistant-*.woff2 etc.
+          if (fs.existsSync(excalidrawFontsSrc)) {
+            fs.mkdirSync(excalidrawFontsDest, { recursive: true });
+            copyDir(excalidrawFontsSrc, excalidrawFontsDest);
+            console.log('Copied Excalidraw fonts ->', excalidrawFontsDest);
+          } else {
+            console.warn('Excalidraw fonts not found at', excalidrawFontsSrc);
+          }
           console.log('Copied Excalidraw CSS ->', excalidrawCssDest);
         } else {
           console.warn('Excalidraw CSS not found at', excalidrawCssSrc);
         }
       } catch (cssErr) {
-        console.error('Failed to copy Excalidraw CSS:', cssErr);
+        console.error('Failed to copy Excalidraw assets:', cssErr);
       }
     }
   } catch (error) {
