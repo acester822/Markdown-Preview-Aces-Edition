@@ -593,6 +593,7 @@ const PreviewContainer = createContainer(() => {
         const excalidrawKey = sourceUri.current + '_' + jsonText.substring(0, 20);
         root.render(
           React.createElement(Excalidraw, {
+            key: excalidrawKey,
             initialData: {
               elements,
               appState: safeAppState,
