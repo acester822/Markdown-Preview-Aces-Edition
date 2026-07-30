@@ -620,20 +620,23 @@ const PreviewContainer = createContainer(() => {
           try {
             // exportToSvg paints a solid background <rect> and defaults to
             // white unless viewBackgroundColor is supplied, so the read-only
-            // preview is always white on a dark theme. Match the extension's
-            // own dark-mode detection (prefers-color-scheme) and pass a dark
-            // background when the theme is dark. A diagram's own explicitly
-            // set (non-white) background still wins.
-            const isDark = window.matchMedia(
-              '(prefers-color-scheme: dark)',
-            ).matches;
+            // preview is white on a dark theme. NOTE: window.matchMedia(
+            // '(prefers-color-scheme: dark)') tracks the OS setting, NOT the
+            // editor theme, so it is unreliable inside a VS Code webview.
+            // Instead read the actual theme color VS Code injects into the
+            // document as --vscode-editor-background (an opaque color), and
+            // fall back to white only if it's genuinely missing. A diagram's
+            // own explicitly set (non-white) background still wins.
+            const docCs = getComputedStyle(document.documentElement);
+            const themeBg =
+              docCs.getPropertyValue('--vscode-editor-background').trim() ||
+              docCs.backgroundColor ||
+              '#ffffff';
             const storedBg = appState && appState.viewBackgroundColor;
             const viewBg =
               storedBg && storedBg.toLowerCase() !== '#ffffff'
                 ? storedBg
-                : isDark
-                ? '#1e1e1e'
-                : '#ffffff';
+                : themeBg;
             const svg = await exportToSvg({
               elements: elements as any,
               appState: {
@@ -646,6 +649,9 @@ const PreviewContainer = createContainer(() => {
             svg.setAttribute('width', '100%');
             svg.style.maxWidth = '100%';
             svg.style.height = 'auto';
+            // Belt-and-suspenders: paint the SVG root with the same background
+            // so the area outside the content rect (if any) matches the theme.
+            svg.style.background = viewBg;
             mountEl!.insertBefore(svg, btn);
           } catch (error) {
             mountEl!.innerHTML = `<pre class="language-text"><code>${escape(
