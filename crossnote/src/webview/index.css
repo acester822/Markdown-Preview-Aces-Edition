@@ -13,7 +13,7 @@
 .excalidraw {
   position: relative;
   width: 100%;
-  min-height: 1000px;
+  min-height: 850px;
   margin: 1rem 0;
   border: 1px solid var(--b3, #e5e7eb);
   border-radius: 0.5rem;
@@ -25,7 +25,7 @@
   width: 100%;
   /* Edit mode height (view mode overrides this to "auto" below). Tall enough
      for comfortable drawing. */
-  height: 1000px;
+  height: 850px;
 }
 
 
@@ -36,7 +36,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--vscode-editor-background, #ffffff);
+  background: var(--ftr10-bg, #ffffff);
   padding: 0.5rem;
 }
 

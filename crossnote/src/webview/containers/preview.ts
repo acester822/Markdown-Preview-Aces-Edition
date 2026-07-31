@@ -618,20 +618,15 @@ const PreviewContainer = createContainer(() => {
         mountEl.appendChild(btn);
         (async () => {
           try {
-            // exportToSvg paints a solid background <rect> and defaults to
-            // white unless viewBackgroundColor is supplied, so the read-only
-            // preview is white on a dark theme. NOTE: window.matchMedia(
-            // '(prefers-color-scheme: dark)') tracks the OS setting, NOT the
-            // editor theme, so it is unreliable inside a VS Code webview.
-            // Instead read the actual theme color VS Code injects into the
-            // document as --vscode-editor-background (an opaque color), and
-            // fall back to white only if it's genuinely missing. A diagram's
-            // own explicitly set (non-white) background still wins.
+            // exportToSvg paints a solid background <rect> and defaults to white
+            // unless viewBackgroundColor is supplied. Read the theme background
+            // from --ftr10-bg (the project's main background variable) so the
+            // read-only SVG matches the user's theme. A diagram's own
+            // explicitly set (non-white) background still wins. NOTE: this only
+            // tints the SVG + its small mount node, never the whole window.
             const docCs = getComputedStyle(document.documentElement);
             const themeBg =
-              docCs.getPropertyValue('--vscode-editor-background').trim() ||
-              docCs.backgroundColor ||
-              '#ffffff';
+              docCs.getPropertyValue('--ftr10-bg').trim() || '#ffffff';
             const storedBg = appState && appState.viewBackgroundColor;
             const viewBg =
               storedBg && storedBg.toLowerCase() !== '#ffffff'
@@ -670,6 +665,15 @@ const PreviewContainer = createContainer(() => {
         const apiHolder: { current: any } = { current: null };
         const root = createRoot(mountEl);
         excalidrawRoots.set(el, root);
+        // Keep wheel/trackpad scrolling inside the Excalidraw canvas instead of
+        // bubbling up to the markdown preview (which would scroll the .md
+        // behind the editor). Capture phase so it fires before any preview
+        // scroll-sync handlers.
+        const stopScroll = (e: Event) => {
+          e.stopPropagation();
+        };
+        mountEl.addEventListener('wheel', stopScroll, { capture: true });
+        mountEl.addEventListener('touchmove', stopScroll, { capture: true });
         let lastSentRef = jsonText;
         root.render(
           React.createElement(Excalidraw, {
