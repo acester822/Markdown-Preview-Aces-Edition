@@ -618,35 +618,49 @@ const PreviewContainer = createContainer(() => {
         mountEl.appendChild(btn);
         (async () => {
           try {
-            // exportToSvg paints a solid background <rect> and defaults to white
-            // unless viewBackgroundColor is supplied. Read the theme background
-            // from --ftr10-bg (the project's main background variable) so the
-            // read-only SVG matches the user's theme. A diagram's own
-            // explicitly set (non-white) background still wins. NOTE: this only
-            // tints the SVG + its small mount node, never the whole window.
-            const docCs = getComputedStyle(document.documentElement);
-            const themeBg =
-              docCs.getPropertyValue('--ftr10-bg').trim() || '#ffffff';
-            const storedBg = appState && appState.viewBackgroundColor;
-            const viewBg =
-              storedBg && storedBg.toLowerCase() !== '#ffffff'
-                ? storedBg
-                : themeBg;
+            // exportToSvg always bakes a solid <rect> background INTO the SVG
+            // (default white). We export with a transparent background and then
+            // strip that rect (see below) so the SVG is see-through and the
+            // --ftr10-bg themed container behind it shows. A diagram with its
+            // own explicitly-set background is handled by keeping that data in
+            // the exported scene (the rect we remove is only the default one).
             const svg = await exportToSvg({
               elements: elements as any,
               appState: {
                 ...(appState ?? {}),
                 collaborators: undefined,
-                viewBackgroundColor: viewBg,
+                // Export the background as transparent. exportToSvg always
+                // bakes a solid <rect> background INTO the SVG, so even a
+                // themed color produces an opaque rect that hides the page
+                // behind it. We export transparent then strip that rect so the
+                // SVG is see-through and the --ftr10-bg container shows.
+                viewBackgroundColor: 'transparent',
               } as any,
               files: files as any,
             });
+            // Remove the baked-in background <rect> (Excalidraw marks it with
+            // data-id="background" or class "excalidraw__canvas-background").
+            svg
+              .querySelectorAll(
+                'rect[data-id="background"], rect.excalidraw__canvas-background',
+              )
+              .forEach((rect) => rect.remove());
+            // Fallback: drop any remaining rect that just paints the full
+            // background (no stroke, matches the old bg color).
+            svg
+              .querySelectorAll('rect')
+              .forEach((rect) => {
+                const fill = (rect.getAttribute('fill') || '').toLowerCase();
+                const hasStroke = (rect.getAttribute('stroke') || '').trim();
+                if (!hasStroke && fill && fill !== 'none') {
+                  rect.remove();
+                }
+              });
             svg.setAttribute('width', '100%');
             svg.style.maxWidth = '100%';
             svg.style.height = 'auto';
-            // Belt-and-suspenders: paint the SVG root with the same background
-            // so the area outside the content rect (if any) matches the theme.
-            svg.style.background = viewBg;
+            // Make the SVG itself transparent so nothing behind it is hidden.
+            svg.style.background = 'transparent';
             mountEl!.insertBefore(svg, btn);
           } catch (error) {
             mountEl!.innerHTML = `<pre class="language-text"><code>${escape(
